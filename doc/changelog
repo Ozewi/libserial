@@ -1,0 +1,58 @@
+/** changelog
+ * Módulo serial: Manejo de comunicaciones por puerto serie
+ *
+ * @file      changelog
+ * @brief     Historial de revisiones del módulo
+ * @author    José Luis Sánchez, David Serrano
+ * @date      2008.07.04
+ * @version   1.1.4
+ *
+ * Copyright (c) 2005-2008 Sepsa, S.A.
+ * All rights reserved. Permission to use, modify or copy this software in whole or in part is
+ * forbidden without prior, writen consent of the copyright holder.
+ */
+
+----------------------------------------------------------------------------------------------------
+2008.07.15 -> 1.1.4
+--------------------
+Se incluye función IsTxFIFOempty para comprobar si la UART serie transmitió
+todos los datos del buffer
+
+----------------------------------------------------------------------------------------------------
+2008.02.15 -> 1.1.3
+--------------------
+Corrección al fijar la velocidad, a lo POSIX.
+
+----------------------------------------------------------------------------------------------------
+2008.01.24 -> 1.1.2
+--------------------
+Añadida la función WriteByte para escribir un solo byte.
+
+----------------------------------------------------------------------------------------------------
+2007.11.26 -> 1.1.1
+--------------------
+La función GetVersion no era estática como debería ser.
+Eliminado el prototipo de la función Init antigua, que no debería estar ahí.
+
+----------------------------------------------------------------------------------------------------
+2007.10.24 -> 1.1.0
+--------------------
+Modificada la función Init para admitir parámetros en un formato más "coherente".
+Añadida la función GetBaudCode que convierte valores de velocidad en códigos para Init.
+
+----------------------------------------------------------------------------------------------------
+2006.10.24 -> 1.0.0
+--------------------
+Actualización de la documentación.
+Cambios estéticos.
+Release 1.
+
+----------------------------------------------------------------------------------------------------
+2006.01.30 -> 0.2.1
+--------------------
+Reemplazado gettimeofday por TimerClass.
+
+----------------------------------------------------------------------------------------------------
+2006.01.23 -> 0.2.0
+--------------------
+La librería comienza su vida independiente del módulo tci.
