@@ -1,0 +1,140 @@
+/** changelog
+ * Módulo libserial: Manejo de comunicaciones por puerto serie
+ *
+ * @file      changelog
+ * @brief     Historial de revisiones del módulo
+ * @author    José Luis Sánchez
+ * @date      2006.10.24
+ * @version   1.0.0
+ *
+ * Copyright (c) 2005-2006 Sepsa, S.A.
+ * All rights reserved. Permission to use, modify or copy this software in whole or in part is
+ * forbidden without prior, writen consent of the copyright holder.
+ */
+
+====================================================================================================
+
+0. Indice
+---------
+
+1. Introducción 
+
+2. Utilización
+
+3. Descripción de funciones
+
+4. Errores conocidos
+
+====================================================================================================
+
+1. Introducción
+---------------
+
+Esta librería encapsula el manejo de puertos serie en una sola clase, incluyendo las funciones de
+configuración, lectura y escritura.
+
+Cada instancia de la clase representa un puerto serie.
+
+
+====================================================================================================
+
+2. Utilización
+--------------
+
+
+
+====================================================================================================
+
+3. Descripción de funciones
+---------------------------
+
+Toda la funcionalidad está encapsulada en una sola clase, Serial.
+
+ Constructor
+ -----------
+  Función: Inicialización de variables y apertura del dispositivo
+  Entrada: devname       Path al dispositivo serie
+  Salida : -
+
+ Destructor
+ ----------
+  Función: Devuelve el puerto serie a su configuración anterior
+  Entrada: -
+  Salida : -
+
+ Init
+ ----
+  Función: Inicialización del puerto serie
+  Entrada: c_iflag       Configuración del modo de entrada
+  Entrada: c_oflag       Configuración del modo de salida
+  Entrada: c_cflag       Configuración del modo de control
+  Entrada: c_lflag       Configuración del modo local
+  Entrada: c_line        Disciplina de línea [ = 0 ]
+  Entrada: c_cc          Caracteres de control [ = 0 ]
+  Salida : true si todo fue bien, false si error.
+
+  Inicializa el puerto serie con los parámetros indicados, guardando los que tenía anteriormente
+  para su recuperación en el destructor de la clase.
+  Si canonical es false, se desactivan el timeout y la lectura bloqueante.
+  Véase: man tcsetattr
+
+ Read
+ ----
+  Función: Lectura del puerto serie
+  Entrada: buf           Buffer en el que escribir lo leido
+  Entrada: size          Bytes a leer
+  Entrada: t_out         Timeout en ms
+  Salida : Bytes leidos, -1 si error
+
+  El modo de lectura (canónica, etc) depende de los parámetros de configuración pasados a Init.
+  Ver http://tldp.org/HOWTO/Serial-Programming-HOWTO/x115.html para más información.
+
+ Write
+ -----
+  Función: Escritura al puerto serie
+  Entrada: buf           Buffer con los datos a escribir
+  Entrada: size          Bytes a escribir
+  Salida : Bytes escritos, -1 si error
+
+ ClearBuffer
+ -----------
+  Función: Vaciar buffer de salida
+  Entrada: operation     Tipo de operación a realizar: espera o borrado i/o
+  Salida : -
+
+ SetLine
+ -------
+  Función: Establecer el estado de las líneas del puerto serie
+  Entrada: line          Línea a controlar
+  Entrada: mode          Valor a establecer (on/off)
+  Salida : false si error
+
+  Los posibles valores para el parámetro line son los siguientes:
+    LINE_LE    
+    LINE_DTR   DTR (Data Terminal Ready)
+    LINE_RTS   RTS (Ready To Send)
+    LINE_ST    ST (Serial Transmit)
+    LINE_SR    SR (Serial Receive)
+    LINE_CTS   CTS (Clear To Send)
+    LINE_CAR   
+    LINE_RNG   RNG (Ring)
+    LINE_DSR   DSR (Data Send Ready)
+  
+ GetLine
+ -------
+  Función: Recuperar el estado de las líneas del puerto serie
+  Entrada: line          Línea a controlar
+  Salida : 1 si la línea está activa, 0 si está inactiva, -1 si error
+
+  Los valores del parámetro line son los mismos que los de la función SetLine.
+
+====================================================================================================
+
+4. Errores conocidos
+--------------------
+
+* La función de configuración utiliza valores sin encapsular, que se corresponden directamente con
+  los parámetros tcsetattr.
+
+* Un puerto serie no se puede abrir más de una vez, pero no se toma ninguna medida para impedirlo
+  (el sistema dará un error cuando se intente).

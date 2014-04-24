@@ -1,15 +1,12 @@
 #
 # Makefile de la librería serial
-# Última modificación: 23.01.2006
+# Última modificación: 23.04.2014
 #
-include ../arch.mak
 
-PROJECT = libserial
-TARGET  = libserial.so libserial.a
+MODULE = libserial
+TARGET = libserial.so libserial.a
+H_INSTALL_FILES = libserial.h
 
-libserial_dep = serial.o
+libserial_dep = libserial.o
 
-H_INSTALL_FILES = serial.h
-DBG_FLAGS = -fno-exceptions -fno-rtti
-
-include ../common.mak
+include ../Makefile.common

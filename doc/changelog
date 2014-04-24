@@ -1,50 +1,57 @@
 /** changelog
- * Módulo serial: Manejo de comunicaciones por puerto serie
+ * MÃ³dulo libserial: Manejo de comunicaciones por puerto serie
  *
  * @file      changelog
- * @brief     Historial de revisiones del módulo
- * @author    José Luis Sánchez, David Serrano
- * @date      2008.07.04
- * @version   1.1.4
+ * @brief     Historial de revisiones del mÃ³dulo
+ * @author    JosÃ© Luis SÃ¡nchez
+ * @author    David Serrano
+ * @date      2014.04.23
+ * @version   1.2.0
  *
- * Copyright (c) 2005-2008 Sepsa, S.A.
- * All rights reserved. Permission to use, modify or copy this software in whole or in part is
- * forbidden without prior, writen consent of the copyright holder.
+ * Copyright (c) 2005-2014 JosÃ© Luis SÃ¡nchez Arroyo
+ * This software is distributed under the terms of the LGPL version 2 and comes WITHOUT ANY WARRANTY.
+ * Please read the file COPYING.LIB for further details.
  */
+
+----------------------------------------------------------------------------------------------------
+2014.04.23 -> 1.2.0
+--------------------
+ReordenaciÃ³n de cÃ³digo, moviendo las cabeceras al directorio raÃ­z del mÃ³dulo.
+InformaciÃ³n para doxygen movida a las cabeceras.
 
 ----------------------------------------------------------------------------------------------------
 2008.07.15 -> 1.1.4
 --------------------
-Se incluye función IsTxFIFOempty para comprobar si la UART serie transmitió
-todos los datos del buffer
+Se incluye funciÃ³n IsTxFIFOempty para comprobar si la UART serie transmitiÃ³ todos los datos del
+buffer.
 
 ----------------------------------------------------------------------------------------------------
 2008.02.15 -> 1.1.3
 --------------------
-Corrección al fijar la velocidad, a lo POSIX.
+CorrecciÃ³n al fijar la velocidad, a lo POSIX.
 
 ----------------------------------------------------------------------------------------------------
 2008.01.24 -> 1.1.2
 --------------------
-Añadida la función WriteByte para escribir un solo byte.
+AÃ±adida la funciÃ³n WriteByte para escribir un solo byte.
 
 ----------------------------------------------------------------------------------------------------
 2007.11.26 -> 1.1.1
 --------------------
-La función GetVersion no era estática como debería ser.
-Eliminado el prototipo de la función Init antigua, que no debería estar ahí.
+La funciÃ³n GetVersion no era estÃ¡tica como deberÃ­a ser.
+Eliminado el prototipo de la funciÃ³n Init antigua, que no deberÃ­a estar ahÃ­.
 
 ----------------------------------------------------------------------------------------------------
 2007.10.24 -> 1.1.0
 --------------------
-Modificada la función Init para admitir parámetros en un formato más "coherente".
-Añadida la función GetBaudCode que convierte valores de velocidad en códigos para Init.
+Modificada la funciÃ³n Init para admitir parÃ¡metros en un formato mÃ¡s "coherente".
+AÃ±adida la funciÃ³n GetBaudCode que convierte valores de velocidad en cÃ³digos para Init.
 
 ----------------------------------------------------------------------------------------------------
 2006.10.24 -> 1.0.0
 --------------------
-Actualización de la documentación.
-Cambios estéticos.
+ActualizaciÃ³n de la documentaciÃ³n.
+Cambios estÃ©ticos.
 Release 1.
 
 ----------------------------------------------------------------------------------------------------
@@ -55,4 +62,4 @@ Reemplazado gettimeofday por TimerClass.
 ----------------------------------------------------------------------------------------------------
 2006.01.23 -> 0.2.0
 --------------------
-La librería comienza su vida independiente del módulo tci.
+La librerÃ­a comienza su vida independiente del mÃ³dulo tci.
