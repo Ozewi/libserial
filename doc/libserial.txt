@@ -1,15 +1,15 @@
-/** changelog
+/** libserial
  * Módulo libserial: Manejo de comunicaciones por puerto serie
  *
- * @file      changelog
- * @brief     Historial de revisiones del módulo
+ * @file      libserial.txt
+ * @brief     Documentación de la librería
  * @author    José Luis Sánchez
  * @date      2006.10.24
  * @version   1.0.0
  *
- * Copyright (c) 2005-2006 Sepsa, S.A.
- * All rights reserved. Permission to use, modify or copy this software in whole or in part is
- * forbidden without prior, writen consent of the copyright holder.
+ * Copyright (c) 2005-2016 José Luis Sánchez Arroyo
+ * This software is distributed under the terms of the LGPL version 2 and comes WITHOUT ANY WARRANTY.
+ * Please read the file COPYING.LIB for further details.
  */
 
 ====================================================================================================

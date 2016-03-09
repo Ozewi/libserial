@@ -6,27 +6,24 @@
  * @author    Íñigo López-Barranco Muñiz
  * @author    José Luis Sánchez
  * @author    David Serrano
- * @date      2014.04.23
- * @version   1.2.0
+ * @date      2016.03.09
+ * @version   1.2.1
  *
- * Copyright (c) 2005-2014 José Luis Sánchez Arroyo
+ * Copyright (c) 2005-2016 José Luis Sánchez Arroyo
  * This software is distributed under the terms of the LGPL version 2 and comes WITHOUT ANY WARRANTY.
  * Please read the file COPYING.LIB for further details.
  */
 
 #include "libserial.h"
 #include <libUtility/timer.h>
+#include <libUtility/versioninfo.h>
 #include <fcntl.h>
 #include <string.h>
 #include <sys/poll.h>
 #include <errno.h>
 #include <stdio.h>
 
-/**------------------------------------------
- * @brief   Constantes generales
- * ------ */
-
-#define LIBSERIAL_VERSION   "1.2.0"     //!< Código de revisión de la librería
+ModuleVersion(libserial, 1.2.1)                 //!< Declaración de la versión de la librería
 
 /**-------------------------------------------------------------------------------------------------
  * @brief   Clase Serial - Funciones públicas
@@ -279,12 +276,4 @@ tcflag_t Serial::GetBaudCode(uint32_t baudrate, bool strict)
       rt = uint2tcflag[i].flag;
     }
   return rt;
-}
-
-/**
- * @brief   Identificación de la librería
- */
-const char* Serial::GetVersion()
-{
-  return LIBSERIAL_VERSION;
 }

@@ -6,10 +6,10 @@
  * @author    Íñigo López-Barranco Muñiz
  * @author    José Luis Sánchez
  * @author    David Serrano
- * @date      2014.04.23
- * @version   1.2.0
+ * @date      2016.03.09
+ * @version   1.2.1
  *
- * Copyright (c) 2005-2014 José Luis Sánchez Arroyo
+ * Copyright (c) 2005-2016 José Luis Sánchez Arroyo
  * This software is distributed under the terms of the LGPL version 2 and comes WITHOUT ANY WARRANTY.
  * Please read the file COPYING.LIB for further details.
  */
@@ -159,13 +159,6 @@ public:
     uint32_t baudrate,                  /** @param   Valor de velocidad requerido */
     bool strict = false                 /** @param   ¿Requerida estrictamente la velocidad del parámetro? */
   );
-
-  /**
-   * @brief   Identificación de la librería
-   */
-  static
-  const char*                           /** @return  Código de revisión de la librería */
-  GetVersion ();
 
 protected:
   int      fd;                          //!< File descriptor
