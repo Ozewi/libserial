@@ -23,9 +23,8 @@
 #include <sys/ioctl.h>
 
 /**-------------------------------------------------------------------------------------------------
- * Clase Serial: Manejo del puerto serie
- * ------------------------------------------
- */
+ * @brief   Clase Serial: Manejo del puerto serie
+ * ------ */
 class Serial
 {
 public:
