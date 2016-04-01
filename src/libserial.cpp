@@ -6,8 +6,8 @@
  * @author    Íñigo López-Barranco Muñiz
  * @author    José Luis Sánchez
  * @author    David Serrano
- * @date      2016.03.09
- * @version   1.2.1
+ * @date      2016.04.01
+ * @version   1.2.2
  *
  * Copyright (c) 2005-2016 José Luis Sánchez Arroyo
  * This software is distributed under the terms of the LGPL version 2 and comes WITHOUT ANY WARRANTY.
@@ -16,14 +16,11 @@
 
 #include "libserial.h"
 #include <libUtility/timer.h>
-#include <libUtility/versioninfo.h>
 #include <fcntl.h>
 #include <string.h>
 #include <sys/poll.h>
 #include <errno.h>
 #include <stdio.h>
-
-ModuleVersion(libserial, 1.2.1)                 //!< Declaración de la versión de la librería
 
 /**-------------------------------------------------------------------------------------------------
  * @brief   Clase Serial - Funciones públicas
