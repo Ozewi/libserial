@@ -5,13 +5,19 @@
  * @brief     Historial de revisiones del módulo
  * @author    José Luis Sánchez
  * @author    David Serrano
- * @date      2016.04.01
- * @version   1.2.2
+ * @date      2016.04.27
+ * @version   1.2.3
  *
  * Copyright (c) 2005-2016 José Luis Sánchez Arroyo
  * This software is distributed under the terms of the LGPL version 2 and comes WITHOUT ANY WARRANTY.
  * Please read the file COPYING.LIB for further details.
  */
+
+----------------------------------------------------------------------------------------------------
+2016.04.27 -> 1.2.3
+-------------------
+Eliminadas un par de trazas que andaban por ahí perdidas.
+Actualización de la documentación.
 
 ----------------------------------------------------------------------------------------------------
 2016.04.01 -> 1.2.2

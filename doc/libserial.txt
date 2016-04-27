@@ -4,8 +4,8 @@
  * @file      libserial.txt
  * @brief     Documentación de la librería
  * @author    José Luis Sánchez
- * @date      2006.10.24
- * @version   1.0.0
+ * @date      2016.04.27
+ * @version   1.2.3
  *
  * Copyright (c) 2005-2016 José Luis Sánchez Arroyo
  * This software is distributed under the terms of the LGPL version 2 and comes WITHOUT ANY WARRANTY.
@@ -53,7 +53,7 @@ Toda la funcionalidad está encapsulada en una sola clase, Serial.
  Constructor
  -----------
   Función: Inicialización de variables y apertura del dispositivo
-  Entrada: devname       Path al dispositivo serie
+  Entrada: devname      Path al dispositivo serie
   Salida : -
 
  Destructor
@@ -65,13 +65,24 @@ Toda la funcionalidad está encapsulada en una sola clase, Serial.
  Init
  ----
   Función: Inicialización del puerto serie
-  Entrada: c_iflag       Configuración del modo de entrada
-  Entrada: c_oflag       Configuración del modo de salida
-  Entrada: c_cflag       Configuración del modo de control
-  Entrada: c_lflag       Configuración del modo local
-  Entrada: c_line        Disciplina de línea [ = 0 ]
-  Entrada: c_cc          Caracteres de control [ = 0 ]
-  Salida : true si todo fue bien, false si error.
+  Entrada: baudrate     Velocidad (bits por segundo) a establecer (B50 ... B4000000)
+  Entrada: flowcontrol  Tipo de control de flujo [ = 0 ]
+                                0       : Sin control de flujo
+                                CRTSCTS : Control de flujo hardware
+                                IXON    : Control de flujo XON/XOFF (output)
+                                IXOFF   : Control de flujo XON/XOFF (input)
+  Entrada: charlen      Tamaño del carácter [ = CS8 ]
+                                CS5     : 5 bits
+                                CS6     : 6 bits
+                                CS7     : 7 bits
+                                CS8     : 8 bits
+  Entrada: parity       Tipo de paridad [ = 0 ]
+                                0       : Sin paridad
+                                PARODD  : Paridad impar
+                                PARENB  : Paridad par
+  Entrada: stopbits     Bits de stop [ = 0 ]
+                                0       : 1 bit de stop bit
+                                CSTOP   : 2 bits de stop
 
   Inicializa el puerto serie con los parámetros indicados, guardando los que tenía anteriormente
   para su recuperación en el destructor de la clase.
@@ -81,9 +92,9 @@ Toda la funcionalidad está encapsulada en una sola clase, Serial.
  Read
  ----
   Función: Lectura del puerto serie
-  Entrada: buf           Buffer en el que escribir lo leido
-  Entrada: size          Bytes a leer
-  Entrada: t_out         Timeout en ms
+  Entrada: buf          Buffer en el que escribir lo leido
+  Entrada: size         Bytes a leer
+  Entrada: t_out        Timeout en ms
   Salida : Bytes leidos, -1 si error
 
   El modo de lectura (canónica, etc) depende de los parámetros de configuración pasados a Init.
@@ -92,21 +103,37 @@ Toda la funcionalidad está encapsulada en una sola clase, Serial.
  Write
  -----
   Función: Escritura al puerto serie
-  Entrada: buf           Buffer con los datos a escribir
-  Entrada: size          Bytes a escribir
+  Entrada: buf          Buffer con los datos a escribir
+  Entrada: size         Bytes a escribir
   Salida : Bytes escritos, -1 si error
+
+
+ WriteByte
+ ---------
+  Función: Escritura al puerto serie de un sólo byte
+  Entrada: byte         Byte a escribir
+  Salida : true si fue bien, false si error
+
+ IsTxFIFOEmpty 
+ -------------
+  Función: Comprueba si se transmitieron todos los datos por la UART serie
+  Entrada: -
+  Salida : true si se tansmitieron datos, false en caso contrario
 
  ClearBuffer
  -----------
   Función: Vaciar buffer de salida
-  Entrada: operation     Tipo de operación a realizar: espera o borrado i/o
+  Entrada: operation    Tipo de operación a realizar
+                                CLEAR_BUF_IN    : Borra el buffer de entrada
+                                CLEAR_BUF_OUT   : Borra el buffer de salida
+                                FLUSH_BUF_OUT   : Vacía el buffer de salida esperando que se acaben de enviar los datos
   Salida : -
 
  SetLine
  -------
   Función: Establecer el estado de las líneas del puerto serie
-  Entrada: line          Línea a controlar
-  Entrada: mode          Valor a establecer (on/off)
+  Entrada: line         Línea a controlar
+  Entrada: mode         Valor a establecer (on/off)
   Salida : false si error
 
   Los posibles valores para el parámetro line son los siguientes:
@@ -128,13 +155,21 @@ Toda la funcionalidad está encapsulada en una sola clase, Serial.
 
   Los valores del parámetro line son los mismos que los de la función SetLine.
 
+ GetBaudCode
+ -----------
+  Función: Conversión del parámetro de velocidad del puerto de entero a constante válida para Init.
+  Entrada: baudrate     Valor de velocidad requerido
+           strict       ¿Requerida estrictamente la velocidad del parámetro? [ = false ]
+  Salida : Constante correspondiente o la inmediata superior; 0 si no es válida y se pidió estricta
+
+  La función devuelve el código de velocidad más aproximado a la velocidad requerida.
+  Si se solicita el código estricto, la función devuelve un error en caso de que el valor no coincida
+  con ningún valor de velocidad válido.
+
 ====================================================================================================
 
 4. Errores conocidos
 --------------------
-
-* La función de configuración utiliza valores sin encapsular, que se corresponden directamente con
-  los parámetros tcsetattr.
 
 * Un puerto serie no se puede abrir más de una vez, pero no se toma ninguna medida para impedirlo
   (el sistema dará un error cuando se intente).

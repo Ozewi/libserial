@@ -6,8 +6,8 @@
  * @author    Íñigo López-Barranco Muñiz
  * @author    José Luis Sánchez
  * @author    David Serrano
- * @date      2016.03.09
- * @version   1.2.1
+ * @date      2016.04.27
+ * @version   1.2.3
  *
  * Copyright (c) 2005-2016 José Luis Sánchez Arroyo
  * This software is distributed under the terms of the LGPL version 2 and comes WITHOUT ANY WARRANTY.
@@ -120,7 +120,7 @@ public:
   );
 
   /**
-   * @brief   Comprueba si se transmitieron todos los datos por la UART serie[A
+   * @brief   Comprueba si se transmitieron todos los datos por la UART serie
    */
   bool                                  /** @return  true si se tansmitieron datos, false en caso contrario */
   IsTxFIFOEmpty ();

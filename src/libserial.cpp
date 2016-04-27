@@ -6,8 +6,8 @@
  * @author    Íñigo López-Barranco Muñiz
  * @author    José Luis Sánchez
  * @author    David Serrano
- * @date      2016.04.01
- * @version   1.2.2
+ * @date      2016.04.27
+ * @version   1.2.3
  *
  * Copyright (c) 2005-2016 José Luis Sánchez Arroyo
  * This software is distributed under the terms of the LGPL version 2 and comes WITHOUT ANY WARRANTY.
@@ -35,7 +35,6 @@ Serial::Serial(const char* devname)
   prev_tio = 0;
   if (devname)
     fd = open(devname, O_RDWR | O_NOCTTY | O_NDELAY);
-  printf("Serial: device = %s, línea %d\n", devname, __LINE__);
 }
 
 /**
@@ -74,7 +73,6 @@ bool Serial::Init(tcflag_t baudrate, tcflag_t flowcontrol, tcflag_t charlen, tcf
   tio.c_cc[VTIME] = 0;                                    // Timeout por omisión desactivado
   tio.c_cc[VMIN]  = 1;                                    // Mínimo de caracteres a leer
 
-  printf("Serial::Init: baudios = %d, línea %d\n", baudrate, __LINE__);
   cfsetospeed(&tio, baudrate);                            // POSIX way of life
   cfsetispeed(&tio, baudrate);                            // POSIX way of life
 
