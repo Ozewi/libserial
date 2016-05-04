@@ -6,8 +6,8 @@
  * @author    Íñigo López-Barranco Muñiz
  * @author    José Luis Sánchez
  * @author    David Serrano
- * @date      2016.04.27
- * @version   1.2.3
+ * @date      2016.05.03
+ * @version   1.3.0
  *
  * Copyright (c) 2005-2016 José Luis Sánchez Arroyo
  * This software is distributed under the terms of the LGPL version 2 and comes WITHOUT ANY WARRANTY.
@@ -30,13 +30,23 @@ class Serial
 public:
 
   /**
+   * @brief   Funciones PendingRead y PendingWrite, valor de retorno: situaciones del buffer
+   */
+  enum EnPending
+  {
+    PENDING_ERROR,                      //!< Error: no se ha podido averiguar el estado
+    PENDING_EMPTY,                      //!< No hay datos pendientes de transmitir (buffer vacío)
+    PENDING_PENDING                     //!< Hay datos pendientes de transmitir
+  };
+
+  /**
    * @brief   Función ClearBuffer, parámetro operation: tipos de operación de vaciado de buffer
    */
   enum EnClearOper
   {
-    CLEAR_BUF_IN = 1,
-    CLEAR_BUF_OUT,
-    FLUSH_BUF_OUT
+    CLEAR_BUF_IN = 1,                   //!< Vaciar el buffer de entrada (descartar datos pendientes)
+    CLEAR_BUF_OUT,                      //!< Vaciar el buffer de salida descartando datos pendientes
+    FLUSH_BUF_OUT                       //!< Esperar a que se terminen de enviar los datos pendientes
   };
 
   /**
@@ -124,6 +134,18 @@ public:
    */
   bool                                  /** @return  true si se tansmitieron datos, false en caso contrario */
   IsTxFIFOEmpty ();
+
+  /**
+   * @brief   Comprueba si hay datos pendientes de enviar
+   */
+  EnPending                             /** @return  Estado del buffer de envío - Véase enum EnPending */
+  PendingWrite();
+
+  /**
+   * @brief   Comprueba si hay datos pendientes de leer
+   */
+  EnPending                             /** @return  Estado del buffer de recepción - Véase enum EnPending */
+  PendingRead();
 
   /**
    * @brief   Vaciar buffer de salida

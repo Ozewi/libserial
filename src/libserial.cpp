@@ -6,8 +6,8 @@
  * @author    Íñigo López-Barranco Muñiz
  * @author    José Luis Sánchez
  * @author    David Serrano
- * @date      2016.04.27
- * @version   1.2.3
+ * @date      2016.05.03
+ * @version   1.3.0
  *
  * Copyright (c) 2005-2016 José Luis Sánchez Arroyo
  * This software is distributed under the terms of the LGPL version 2 and comes WITHOUT ANY WARRANTY.
@@ -55,14 +55,14 @@ bool Serial::Init(tcflag_t baudrate, tcflag_t flowcontrol, tcflag_t charlen, tcf
 {
   if (!IsValid())
     return false;
-  if (!prev_tio)                                          // Se recoge la configuración anterior sólo la primera vez.
+  if (!prev_tio)                                // Se recoge la configuración anterior sólo la primera vez.
   {
     prev_tio = new termios;
     if (tcgetattr(fd, prev_tio) == -1)
-      return false;                                       // No se puede obtener información del puerto
+      return false;                             // No se puede obtener información del puerto
   }
 
-  termios tio;                                            // Establecer nuevos parámetros del puerto
+  termios tio;                                  // Establecer nuevos parámetros del puerto
   memset(&tio, 0, sizeof(termios));
 
   tio.c_iflag = (flowcontrol & (IXON | IXOFF)) | IGNPAR | (parity)? INPCK : 0;
@@ -70,14 +70,14 @@ bool Serial::Init(tcflag_t baudrate, tcflag_t flowcontrol, tcflag_t charlen, tcf
   tio.c_cflag = (baudrate & CBAUDEX) | (charlen & CSIZE) | (stopbits & CSTOPB) | CLOCAL | CREAD | (parity? (PARENB | (parity & PARODD)) : 0) | (flowcontrol & CRTSCTS);
   tio.c_lflag = 0;
 
-  tio.c_cc[VTIME] = 0;                                    // Timeout por omisión desactivado
-  tio.c_cc[VMIN]  = 1;                                    // Mínimo de caracteres a leer
+  tio.c_cc[VTIME] = 0;                          // Timeout por omisión desactivado
+  tio.c_cc[VMIN]  = 1;                          // Mínimo de caracteres a leer
 
-  cfsetospeed(&tio, baudrate);                            // POSIX way of life
-  cfsetispeed(&tio, baudrate);                            // POSIX way of life
+  cfsetospeed(&tio, baudrate);                  // POSIX way of life
+  cfsetispeed(&tio, baudrate);                  // POSIX way of life
 
-  if (tcflush(fd, TCIFLUSH) != -1 &&                      // Limpiar buffers y
-      tcsetattr(fd, TCSANOW, &tio) != -1)                 // actualizar parámetros
+  if (tcflush(fd, TCIFLUSH) != -1 &&            // Limpiar buffers y
+      tcsetattr(fd, TCSANOW, &tio) != -1)       // actualizar parámetros
   {
     tcgetattr(fd, &tio);
     return true;
@@ -92,7 +92,7 @@ ssize_t Serial::Read(uint8_t* buf, size_t size, uint32_t t_out)
 {
   if (!IsValid() || !buf)
     return -1;
-  if (!t_out)                                             // Lectura sin timeout (tal vez bloqueante)
+  if (!t_out)                                   // Lectura sin timeout (tal vez bloqueante)
     return read(fd, buf, size);
 
   pollfd p_list;
@@ -106,11 +106,11 @@ ssize_t Serial::Read(uint8_t* buf, size_t size, uint32_t t_out)
   {
     do
       err = poll(&p_list, 1, t_out);
-    while (err < 0 && errno == EINTR);                    // Continuar a la espera si se recibe EINTR
-    if (err <= 0 || timer.IsExpired())                    // Salida con error o timeout
+    while (err < 0 && errno == EINTR);          // Continuar a la espera si se recibe EINTR
+    if (err <= 0 || timer.IsExpired())          // Salida con error o timeout
       break;
-    err = read(fd, &buf[rt], size - rt);                  // Se supone que esto leerá algo...
-    if (err < 0)                                          // Error de lectura
+    err = read(fd, &buf[rt], size - rt);        // Se supone que esto leerá algo...
+    if (err < 0)                                // Error de lectura
     {
       perror("Serial::Read: read");
       break;
@@ -142,7 +142,7 @@ ssize_t Serial::Write(const uint8_t* buf, size_t size)
 bool Serial::WriteByte(uint8_t byte)
 {
   if (!IsValid())
-    return -1;
+    return false;
   if (write(fd, &byte, 1) == 1)
     return true;
   perror("Serial::WriteByte");
@@ -156,12 +156,37 @@ bool Serial::IsTxFIFOEmpty()
 {
   bool ret = false;
   int lsr = 0;
-  if (ioctl(fd, TIOCSERGETLSR, &lsr) != -1)	        // lectura de line status register
+  if (ioctl(fd, TIOCSERGETLSR, &lsr) != -1)     // lectura de line status register
   {
-    if (lsr & TIOCSER_TEMT)		  	        // FIFO y shift register vacíos
+    if (lsr & TIOCSER_TEMT)                     // FIFO y shift register vacíos
       ret = true;
   }
   return ret;
+}
+
+/**
+ * @brief   Comprueba si hay datos pendientes de enviar
+ */
+Serial::EnPending Serial::PendingWrite()
+{
+  EnPending rt = PENDING_ERROR;
+  int lsr = 0;
+  if (ioctl(fd, TIOCSERGETLSR, &lsr) != -1)     // lectura de line status register
+    rt = (lsr & TIOCSER_TEMT)? PENDING_EMPTY : PENDING_PENDING; // FIFO y shift register vacíos
+  return rt;
+}
+
+/**
+ * @brief   Comprueba si hay datos pendientes de leer
+ */
+Serial::EnPending Serial::PendingRead()
+{
+  EnPending rt = PENDING_ERROR;
+  int pending = 0;
+  if (ioctl(fd, FIONREAD, &pending) != -1)      // lectura del número de bytes pendientes
+    rt = (pending == 0)? PENDING_EMPTY : PENDING_PENDING;
+
+  return rt;
 }
 
 /**
@@ -173,14 +198,14 @@ void Serial::ClearBuffer(EnClearOper operation)
   {
     switch (operation)
     {
-      case CLEAR_BUF_IN:                                // Borrar buffer de entrada
+      case CLEAR_BUF_IN:                        // Borrar buffer de entrada
         tcflush(fd, TCIFLUSH);
         break;
-      case CLEAR_BUF_OUT:                               // Borrar buffer de salida
+      case CLEAR_BUF_OUT:                       // Borrar buffer de salida
         tcflush(fd, TCOFLUSH);
         break;
-      case FLUSH_BUF_OUT:                               // Esperar vaciado del buffer de salida
-        tcdrain(fd);					// El kernel ha volcado los datos a la UART
+      case FLUSH_BUF_OUT:                       // Esperar vaciado del buffer de salida
+        tcdrain(fd);				// El kernel ha volcado los datos a la UART
         break;
     }
   }
@@ -266,7 +291,7 @@ tcflag_t Serial::GetBaudCode(uint32_t baudrate, bool strict)
       rt = uint2tcflag[i].flag;
     else if (uint2tcflag[i].baud > baudrate)
     {
-      if (strict)                                       // i.e. return 0
+      if (strict)                               // i.e. return 0
         break;
       rt = uint2tcflag[i].flag;
     }
