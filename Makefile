@@ -1,6 +1,6 @@
 #
-# Makefile de la librería serial
-# Última modificación: 2016.04.01
+# Makefile de la librería libserial
+# Última modificación: 2016.05.23
 #
 
 MODULE = libserial
