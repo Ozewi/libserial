@@ -6,8 +6,8 @@
  * @author    Íñigo López-Barranco Muñiz
  * @author    José Luis Sánchez
  * @author    David Serrano
- * @date      2016.05.03
- * @version   1.3.0
+ * @date      2016.06.03
+ * @version   1.3.3
  *
  * Copyright (c) 2005-2016 José Luis Sánchez Arroyo
  * This software is distributed under the terms of the LGPL version 2 and comes WITHOUT ANY WARRANTY.
@@ -21,6 +21,33 @@
 #include <sys/poll.h>
 #include <errno.h>
 #include <stdio.h>
+
+/**-------------------------------------------------------------------------------------------------
+ * @brief   Tabla de equivalencias de los valores de velocidad (bps) y los flags de termios
+ * ------ */
+Serial::Uint2Tcflag Serial::uint2tcflag [] =
+{
+  {     50, B50     },
+  {     75, B75     },
+  {    110, B110    },
+  {    134, B134    },
+  {    150, B150    },
+  {    200, B200    },
+  {    300, B300    },
+  {    600, B600    },
+  {   1200, B1200   },
+  {   1800, B1800   },
+  {   2400, B2400   },
+  {   4800, B4800   },
+  {   9600, B9600   },
+  {  19200, B19200  },
+  {  38400, B38400  },
+  {  57600, B57600  },
+  { 115200, B115200 },
+  { 230400, B230400 },
+  { 460800, B460800 },
+  { 500000, B500000 }
+};
 
 /**-------------------------------------------------------------------------------------------------
  * @brief   Clase Serial - Funciones públicas
@@ -260,30 +287,6 @@ int Serial::GetLine(SerialLine line)
  */
 tcflag_t Serial::GetBaudCode(uint32_t baudrate, bool strict)
 {
-  static Uint2Tcflag uint2tcflag [] =
-  {
-    {     50, B50     },
-    {     75, B75     },
-    {    110, B110    },
-    {    134, B134    },
-    {    150, B150    },
-    {    200, B200    },
-    {    300, B300    },
-    {    600, B600    },
-    {   1200, B1200   },
-    {   1800, B1800   },
-    {   2400, B2400   },
-    {   4800, B4800   },
-    {   9600, B9600   },
-    {  19200, B19200  },
-    {  38400, B38400  },
-    {  57600, B57600  },
-    { 115200, B115200 },
-    { 230400, B230400 },
-    { 460800, B460800 },
-    { 500000, B500000 }
-  };
-
   tcflag_t rt = 0;
 
   for (unsigned i = 0; i < sizeof(uint2tcflag) / sizeof(uint2tcflag[0]) && rt == 0; ++i)
@@ -296,4 +299,15 @@ tcflag_t Serial::GetBaudCode(uint32_t baudrate, bool strict)
       rt = uint2tcflag[i].flag;
     }
   return rt;
+}
+
+/**
+ * @brief   Obtener el valor de velocidad correspondiente al flag de termios.
+ */
+uint32_t Serial::GetBaudValue(tcflag_t p_flag)
+{
+  for (unsigned i = 0; i < sizeof(uint2tcflag) / sizeof(uint2tcflag[0]); ++i)
+    if (uint2tcflag[i].flag == p_flag)
+      return uint2tcflag[i].baud;
+  return 0;                                     // invalid code
 }

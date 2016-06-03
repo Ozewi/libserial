@@ -6,8 +6,8 @@
  * @author    Íñigo López-Barranco Muñiz
  * @author    José Luis Sánchez
  * @author    David Serrano
- * @date      2016.05.03
- * @version   1.3.0
+ * @date      2016.06.03
+ * @version   1.3.3
  *
  * Copyright (c) 2005-2016 José Luis Sánchez Arroyo
  * This software is distributed under the terms of the LGPL version 2 and comes WITHOUT ANY WARRANTY.
@@ -175,16 +175,23 @@ public:
   /**
    * @brief   Conversión del parámetro de velocidad del puerto de entero a constante válida para Init.
    */
+  static
   tcflag_t                              /** @return  Constante correspondiente o la inmediata superior; 0 si no es válida y se pidió estricta */
   GetBaudCode (
     uint32_t baudrate,                  /** @param   Valor de velocidad requerido */
     bool strict = false                 /** @param   ¿Requerida estrictamente la velocidad del parámetro? */
   );
 
-protected:
-  int      fd;                          //!< File descriptor
-  termios* prev_tio;                    //!< Configuración anterior del puerto, para restaurarla al salir
+  /**
+   * @brief   Obtener el valor de velocidad correspondiente al flag de termios.
+   */
+  static
+  uint32_t                              /** @return Valor correspondiente de bps, o 0 si el flag no es válido */
+  GetBaudValue(
+    tcflag_t p_flag                     /** @param  Flag a evaluar */
+  );
 
+protected:
   /**
    * @brief   Estructura para asociar valores de baudrate con flags del sistema
    */
@@ -193,6 +200,10 @@ protected:
     uint32_t baud;                      // Baudrate
     tcflag_t flag;                      // Flag del sistema
   };
+
+  int      fd;                          //!< File descriptor
+  termios* prev_tio;                    //!< Configuración anterior del puerto, para restaurarla al salir
+  static Uint2Tcflag uint2tcflag[];     //!< Tabla de equivalencias de flags y valores de bps
 };
 
 #endif // __LIBSERIAL_H__

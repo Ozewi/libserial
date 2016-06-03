@@ -5,13 +5,25 @@
  * @brief     Historial de revisiones del módulo
  * @author    José Luis Sánchez
  * @author    David Serrano
- * @date      2016.05.27
- * @version   1.3.1
+ * @date      2016.06.03
+ * @version   1.3.3
  *
  * Copyright (c) 2005-2016 José Luis Sánchez Arroyo
  * This software is distributed under the terms of the LGPL version 2 and comes WITHOUT ANY WARRANTY.
  * Please read the file COPYING.LIB for further details.
  */
+
+----------------------------------------------------------------------------------------------------
+2016.06.03 -> 1.3.3
+-------------------
+Ampliación de la funcionalidad del programa de pruebas.
+Nueva función GetBaudValue, reverso de GetBaudCode.
+Ambas funciones pasan a ser estáticas.
+
+----------------------------------------------------------------------------------------------------
+2016.06.01 -> 1.3.2
+-------------------
+El programa de test ahora admite que el mensaje a enviar sea opcional y el tiempo de espera infinito.
 
 ----------------------------------------------------------------------------------------------------
 2016.05.27 -> 1.3.1
