@@ -22,18 +22,18 @@
 #include <iostream>
 #include <vector>
 
-MainVersion(test_libserial, 1.3.3)              //!< Nombre y versión del programa
+MainVersion(test_libserial, 1.3.3)                      //!< Nombre y versión del programa
 
 /**--------------------------------------------------------------------------------------------------
- * @brief   Constantes de configuración
+ * @brief       Constantes de configuración
  * ------ */
-const char* DEFAULT_SERIAL_DEV = "/dev/ttyS0";  //!< Dispositivo serie por omisión
-uint32_t    DEFAULT_SERIAL_BPS = 9600;          //!< Velocidad de conexión por omisión
-uint32_t    DEFAULT_SERIAL_TIMEOUT = 1000;      //!< Tiempo de espera máximo por omisión
-uint32_t    MAX_MESSAGE_LEN = 512;              //!< Longitud máxima del mensaje en bytes
+const char* DEFAULT_SERIAL_DEV = "/dev/ttyS0";          //!< Dispositivo serie por omisión
+uint32_t    DEFAULT_SERIAL_BPS = 9600;                  //!< Velocidad de conexión por omisión
+uint32_t    DEFAULT_SERIAL_TIMEOUT = 1000;              //!< Tiempo de espera máximo por omisión
+uint32_t    MAX_MESSAGE_LEN = 512;                      //!< Longitud máxima del mensaje en bytes
 
-/*--------------------------------------------------------------------------------------------------
- * @brief Leer datos del puerto serie
+/**--------------------------------------------------------------------------------------------------
+ * @brief       Leer datos del puerto serie
  * ------*/
 void ReadData(Serial& port, uint32_t timeout)
 {
@@ -51,8 +51,8 @@ void ReadData(Serial& port, uint32_t timeout)
   printf("%09ld Terminado - %d bytes recibidos.\n", timer.GetTimeNow() - start_time, received);
 }
 
-/*--------------------------------------------------------------------------------------------------
- * @brief Leer paquete de datos del puerto serie
+/**--------------------------------------------------------------------------------------------------
+ * @brief       Leer paquete de datos del puerto serie
  * ------*/
 void ListenData(Serial& port, uint32_t timeout)
 {
@@ -71,8 +71,8 @@ void ListenData(Serial& port, uint32_t timeout)
   printf("%09ld Terminado - %d bytes recibidos.\n", timer.GetTimeNow() - start_time, received);
 }
 
-/*--------------------------------------------------------------------------------------------------
- * @brief Escribir datos a puerto serie
+/**--------------------------------------------------------------------------------------------------
+ * @brief       Escribir datos a puerto serie
  * ------*/
 void WriteData(Serial& port, std::vector<const char*>& bytes)
 {
@@ -108,8 +108,8 @@ void WriteData(Serial& port, std::vector<const char*>& bytes)
   std::cout << "Mensaje enviado.\n";
 }
 
-/*--------------------------------------------------------------------------------------------------
- * @brief Consola para enviar y recibir datos
+/**--------------------------------------------------------------------------------------------------
+ * @brief       Consola para enviar y recibir datos
  * ------*/
 void Console(Serial& port)
 {
@@ -186,7 +186,7 @@ void Console(Serial& port)
 
         if (bytes.size() > 0)
           WriteData(port, bytes);
-  
+
         if (line[0] == 'c')
           ReadData(port, timeout);
         break;
@@ -199,7 +199,7 @@ void Console(Serial& port)
 }
 
 /**--------------------------------------------------------------------------------------------------
- * @brief   Salida con mensaje de sintaxis
+ * @brief       Salida con mensaje de sintaxis
  * ------ */
 void Abort(const char* prog)
 {
@@ -218,8 +218,8 @@ void Abort(const char* prog)
   exit(-1);
 }
 
-/*--------------------------------------------------------------------------------------------------
- * @brief main
+/**--------------------------------------------------------------------------------------------------
+ * @brief       main
  * ------*/
 int main(int argc, char* argv[])
 {
@@ -236,23 +236,23 @@ int main(int argc, char* argv[])
   {
     if (argv[param][0] == '-')
     {
-      switch (argv[param][1])                             // Parámetros que empiezan por '-'
+      switch (argv[param][1])                           // Parámetros que empiezan por '-'
       {
         case 'h':
           Abort(argv[0]);
-          break;                                          // no hace falta...
-          
-        case 'd':                                         // Dispositivo de conexión (puerto serie)
+          break;                                        // no hace falta...
+
+        case 'd':                                       // Dispositivo de conexión (puerto serie)
           if (param + 1 < argc)
             serial_dev = argv[++param];
           break;
 
-        case 's':                                         // Velocidad de conexión
+        case 's':                                       // Velocidad de conexión
           if (param + 1 < argc)
             serial_bps = strtoul(argv[++param], 0, 0);
           break;
 
-        case 't':                                         // Timeout de lectura en milisegundos
+        case 't':                                       // Timeout de lectura en milisegundos
           if (param + 1 < argc)
             serial_timeout = strtoul(argv[++param], 0, 0);
           break;
@@ -262,8 +262,8 @@ int main(int argc, char* argv[])
             Logger(Log::Error) << "Especifique modo interactivo o mensaje en línea, no ambos." << Log::end;
           interactive = true;
           break;
-          
-        default:                                          // wrong
+
+        default:                                        // wrong
           Logger(Log::Error) << "Parámetro incorrecto: '" << argv[param] << "'" << Log::end;
           break;
       }

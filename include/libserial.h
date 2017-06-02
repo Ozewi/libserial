@@ -66,6 +66,48 @@ public:
   };
 
   /**
+   * @brief   Enumeración de los tipos de control de flujo
+   */
+  enum EnFlowControl
+  {
+    NoFlowCtrl        = 0,
+    HarwareFlowCtrl   = CRTSCTS,
+    XonXoffInput      = IXOFF,
+    XonXoffOutput     = IXON,
+    XonXoffBoth       = (IXON | IXOFF)
+  };
+
+  /**
+   * @brief   Enumeración de los tamaños de carácter
+   */
+  enum EnCharLen
+  {
+    c5bits            = CS5,
+    c6bits            = CS6,
+    c7bits            = CS7,
+    c8bits            = CS8
+  };
+
+  /**
+   * @brief   Enumeración de los tipos de paridad
+   */
+  enum EnParity
+  {
+    NoParity          = 0,
+    EvenParity        = PARENB,
+    OddParity         = PARODD
+  };
+
+  /**
+   * @brief   Enumeración de los bits de stop
+   */
+  enum EnStopBits
+  {
+    stop1bit          = 0,
+    stop2bits         = CSTOP
+  };
+
+  /**
    * @brief   Constructor de la clase - Inicialización de variables y apertura del dispositivo
    */
   Serial (
@@ -91,13 +133,13 @@ public:
    *          para su recuperación en el destructor de la clase.
    * @note    Los valores a utilizar son las constantes definidas en termios.h (ver man termios).
    */
-  bool                                  /** @return  true si todo fue bien, false si error. */
+  bool                                                  /** @return  true si todo fue bien, false si error. */
   Init (
-    tcflag_t baudrate,                  /** @param   Velocidad (bits por segundo) a establecer (B50 ... B4000000) */
-    tcflag_t flowcontrol = 0,           /** @param   Tipo de control de flujo (0: No Flow Ctrl, CRTSCTS: Hardware FC, IXON: XON/XOFF (output), IXOFF: XON/XOFF (input) [ = 0 ] */
-    tcflag_t charlen = CS8,             /** @param   Tamaño del carácter (CS5: 5 bits, CS6: 6 bits, CS7: 7 bits, CS8: 8 bits) [ = CS8 ] */
-    tcflag_t parity = 0,                /** @param   Tipo de paridad (0: No Parity, PARODD: Odd parity, PARENB: Even parity) [ = 0 ] */
-    tcflag_t stopbits = 0               /** @param   Bits de stop (0: 1 stop bit, CSTOP: 2 stop bits) [ = 0 ] */
+    tcflag_t baudrate,                                  /** @param   Velocidad (bits por segundo) a establecer (B50 ... B4000000) */
+    EnFlowControl flowcontrol = NoFlowCtrl,             /** @param   Tipo de control de flujo [ = sin control de flujo ] */
+    EnCharLen charlen = c8bits,                         /** @param   Tamaño del carácter [ = 8  bits ] */
+    EnParity parity = NoParity,                         /** @param   Control de paridad del carácter [ sin control de paridad ] */
+    EnStopBits stopbits = stop1bit                      /** @param   Bits de stop (0: 1 stop bit, CSTOP: 2 stop bits) [ = 0 ] */
   );
 
   /**

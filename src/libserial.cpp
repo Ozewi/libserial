@@ -78,33 +78,33 @@ Serial::~Serial()
 /**
  * @brief   Inicialización del puerto serie
  */
-bool Serial::Init(tcflag_t baudrate, tcflag_t flowcontrol, tcflag_t charlen, tcflag_t parity, tcflag_t stopbits)
+bool Serial::Init(tcflag_t baudrate, EnFlowControl flowcontrol, EnCharLen charlen, EnParity parity, EnStopBits stopbits)
 {
   if (!IsValid())
     return false;
-  if (!prev_tio)                                // Se recoge la configuración anterior sólo la primera vez.
+  if (prev_tio == 0)                                    // Se recoge la configuración anterior sólo la primera vez.
   {
     prev_tio = new termios;
     if (tcgetattr(fd, prev_tio) == -1)
-      return false;                             // No se puede obtener información del puerto
+      return false;                                     // No se puede obtener información del puerto
   }
 
-  termios tio;                                  // Establecer nuevos parámetros del puerto
+  termios tio;                                          // Establecer nuevos parámetros del puerto
   memset(&tio, 0, sizeof(termios));
 
   tio.c_iflag = (flowcontrol & (IXON | IXOFF)) | IGNPAR | (parity)? INPCK : 0;
   tio.c_oflag = 0;
-  tio.c_cflag = (baudrate & CBAUDEX) | (charlen & CSIZE) | (stopbits & CSTOPB) | CLOCAL | CREAD | (parity? (PARENB | (parity & PARODD)) : 0) | (flowcontrol & CRTSCTS);
+  tio.c_cflag = (charlen & CSIZE) | (stopbits & CSTOPB) | CLOCAL | CREAD | (parity? (PARENB | (parity & PARODD)) : 0) | (flowcontrol & CRTSCTS);
   tio.c_lflag = 0;
 
-  tio.c_cc[VTIME] = 0;                          // Timeout por omisión desactivado
-  tio.c_cc[VMIN]  = 1;                          // Mínimo de caracteres a leer
+  tio.c_cc[VTIME] = 0;                                  // Timeout por omisión desactivado
+  tio.c_cc[VMIN]  = 1;                                  // Mínimo de caracteres a leer
 
-  cfsetospeed(&tio, baudrate);                  // POSIX way of life
-  cfsetispeed(&tio, baudrate);                  // POSIX way of life
+  cfsetospeed(&tio, baudrate);
+  cfsetispeed(&tio, baudrate);
 
-  if (tcflush(fd, TCIFLUSH) != -1 &&            // Limpiar buffers y
-      tcsetattr(fd, TCSANOW, &tio) != -1)       // actualizar parámetros
+  if (tcflush(fd, TCIFLUSH) != -1 &&                    // Limpiar buffers y
+      tcsetattr(fd, TCSANOW, &tio) != -1)               // actualizar parámetros
   {
     tcgetattr(fd, &tio);
     return true;
