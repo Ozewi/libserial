@@ -1,9 +1,10 @@
-/** libserial
+/**
+ * libserial
  * Módulo libserial: Manejo de comunicaciones por puerto serie
  *
  * @file      test_libserial.cpp
  * @brief     Pruebas unitarias
- * @author    José Luis Sánchez
+ * @author    José Luis Sánchez Arroyo
  * @date      2016.06.03
  * @version   1.3.3
  *

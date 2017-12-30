@@ -1,10 +1,11 @@
-/** libserial
+/**
+ * libserial
  * Módulo libserial: Manejo de comunicaciones por puerto serie
  *
  * @file      libserial.cpp
  * @brief     Clase de manejo del puerto serie
  * @author    Íñigo López-Barranco Muñiz
- * @author    José Luis Sánchez
+ * @author    José Luis Sánchez Arroyo
  * @author    David Serrano
  * @date      2016.06.03
  * @version   1.3.3

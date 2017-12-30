@@ -1,9 +1,10 @@
-/** libserial
+/**
+ * libserial
  * Módulo libserial: Manejo de comunicaciones por puerto serie
  *
  * @file      libserial.txt
  * @brief     Documentación de la librería
- * @author    José Luis Sánchez
+ * @author    José Luis Sánchez Arroyo
  * @date      2016.04.27
  * @version   1.2.3
  *

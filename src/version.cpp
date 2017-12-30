@@ -1,9 +1,10 @@
-/** libserial
+/**
+ * libserial
  * Módulo libserial: Manejo de comunicaciones por puerto serie
  *
  * @file      version.cpp
  * @brief     Información de versión de la biblioteca
- * @author    José Luis Sánchez
+ * @author    José Luis Sánchez Arroyo
  * @date      2017.05.09
  * @version   1.4.0
  *
