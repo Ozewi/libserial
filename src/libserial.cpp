@@ -7,10 +7,10 @@
  * @author    Íñigo López-Barranco Muñiz
  * @author    José Luis Sánchez Arroyo
  * @author    David Serrano
- * @date      2016.06.03
- * @version   1.3.3
+ * @date      2017.05.09
+ * @version   1.4.0
  *
- * Copyright (c) 2005-2016 José Luis Sánchez Arroyo
+ * Copyright (c) 2005-2017 José Luis Sánchez Arroyo
  * This software is distributed under the terms of the LGPL version 2 and comes WITHOUT ANY WARRANTY.
  * Please read the file COPYING.LIB for further details.
  */
@@ -120,7 +120,7 @@ ssize_t Serial::Read(uint8_t* buf, size_t size, uint32_t t_out)
 {
   if (!IsValid() || !buf)
     return -1;
-  if (!t_out)                                   // Lectura sin timeout (tal vez bloqueante)
+  if (!t_out)                                           // Lectura sin timeout (tal vez bloqueante)
     return read(fd, buf, size);
 
   pollfd p_list;
@@ -134,11 +134,11 @@ ssize_t Serial::Read(uint8_t* buf, size_t size, uint32_t t_out)
   {
     do
       err = poll(&p_list, 1, t_out);
-    while (err < 0 && errno == EINTR);          // Continuar a la espera si se recibe EINTR
-    if (err <= 0 || timer.IsExpired())          // Salida con error o timeout
+    while (err < 0 && errno == EINTR);                  // Continuar a la espera si se recibe EINTR
+    if (err <= 0 || timer.IsExpired())                  // Salida con error o timeout
       break;
-    err = read(fd, &buf[rt], size - rt);        // Se supone que esto leerá algo...
-    if (err < 0)                                // Error de lectura
+    err = read(fd, &buf[rt], size - rt);                // Se supone que esto leerá algo...
+    if (err < 0)                                        // Error de lectura
     {
       perror("Serial::Read: read");
       break;
@@ -184,9 +184,9 @@ bool Serial::IsTxFIFOEmpty()
 {
   bool ret = false;
   int lsr = 0;
-  if (ioctl(fd, TIOCSERGETLSR, &lsr) != -1)     // lectura de line status register
+  if (ioctl(fd, TIOCSERGETLSR, &lsr) != -1)             // lectura de line status register
   {
-    if (lsr & TIOCSER_TEMT)                     // FIFO y shift register vacíos
+    if (lsr & TIOCSER_TEMT)                             // FIFO y shift register vacíos
       ret = true;
   }
   return ret;
@@ -199,7 +199,7 @@ Serial::EnPending Serial::PendingWrite()
 {
   EnPending rt = PENDING_ERROR;
   int lsr = 0;
-  if (ioctl(fd, TIOCSERGETLSR, &lsr) != -1)     // lectura de line status register
+  if (ioctl(fd, TIOCSERGETLSR, &lsr) != -1)             // lectura de line status register
     rt = (lsr & TIOCSER_TEMT)? PENDING_EMPTY : PENDING_PENDING; // FIFO y shift register vacíos
   return rt;
 }
@@ -211,7 +211,7 @@ Serial::EnPending Serial::PendingRead()
 {
   EnPending rt = PENDING_ERROR;
   int pending = 0;
-  if (ioctl(fd, FIONREAD, &pending) != -1)      // lectura del número de bytes pendientes
+  if (ioctl(fd, FIONREAD, &pending) != -1)              // lectura del número de bytes pendientes
     rt = (pending == 0)? PENDING_EMPTY : PENDING_PENDING;
 
   return rt;
@@ -226,14 +226,14 @@ void Serial::ClearBuffer(EnClearOper operation)
   {
     switch (operation)
     {
-      case CLEAR_BUF_IN:                        // Borrar buffer de entrada
+      case CLEAR_BUF_IN:                                // Borrar buffer de entrada
         tcflush(fd, TCIFLUSH);
         break;
-      case CLEAR_BUF_OUT:                       // Borrar buffer de salida
+      case CLEAR_BUF_OUT:                               // Borrar buffer de salida
         tcflush(fd, TCOFLUSH);
         break;
-      case FLUSH_BUF_OUT:                       // Esperar vaciado del buffer de salida
-        tcdrain(fd);				// El kernel ha volcado los datos a la UART
+      case FLUSH_BUF_OUT:                               // Esperar vaciado del buffer de salida
+        tcdrain(fd);	                                  // El kernel ha volcado los datos a la UART
         break;
     }
   }
@@ -295,7 +295,7 @@ tcflag_t Serial::GetBaudCode(uint32_t baudrate, bool strict)
       rt = uint2tcflag[i].flag;
     else if (uint2tcflag[i].baud > baudrate)
     {
-      if (strict)                               // i.e. return 0
+      if (strict)                                       // i.e. return 0
         break;
       rt = uint2tcflag[i].flag;
     }
@@ -310,5 +310,5 @@ uint32_t Serial::GetBaudValue(tcflag_t p_flag)
   for (unsigned i = 0; i < sizeof(uint2tcflag) / sizeof(uint2tcflag[0]); ++i)
     if (uint2tcflag[i].flag == p_flag)
       return uint2tcflag[i].baud;
-  return 0;                                     // invalid code
+  return 0;                                             // invalid code
 }

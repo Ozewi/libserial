@@ -7,10 +7,10 @@
  * @author    Íñigo López-Barranco Muñiz
  * @author    José Luis Sánchez Arroyo
  * @author    David Serrano
- * @date      2016.06.03
- * @version   1.3.3
+ * @date      2017.05.09
+ * @version   1.4.0
  *
- * Copyright (c) 2005-2016 José Luis Sánchez Arroyo
+ * Copyright (c) 2005-2017 José Luis Sánchez Arroyo
  * This software is distributed under the terms of the LGPL version 2 and comes WITHOUT ANY WARRANTY.
  * Please read the file COPYING.LIB for further details.
  */
@@ -35,9 +35,9 @@ public:
    */
   enum EnPending
   {
-    PENDING_ERROR,                      //!< Error: no se ha podido averiguar el estado
-    PENDING_EMPTY,                      //!< No hay datos pendientes de transmitir (buffer vacío)
-    PENDING_PENDING                     //!< Hay datos pendientes de transmitir
+    PENDING_ERROR,                                      //!< Error: no se ha podido averiguar el estado
+    PENDING_EMPTY,                                      //!< No hay datos pendientes de transmitir (buffer vacío)
+    PENDING_PENDING                                     //!< Hay datos pendientes de transmitir
   };
 
   /**
@@ -45,9 +45,9 @@ public:
    */
   enum EnClearOper
   {
-    CLEAR_BUF_IN = 1,                   //!< Vaciar el buffer de entrada (descartar datos pendientes)
-    CLEAR_BUF_OUT,                      //!< Vaciar el buffer de salida descartando datos pendientes
-    FLUSH_BUF_OUT                       //!< Esperar a que se terminen de enviar los datos pendientes
+    CLEAR_BUF_IN = 1,                                   //!< Vaciar el buffer de entrada (descartar datos pendientes)
+    CLEAR_BUF_OUT,                                      //!< Vaciar el buffer de salida descartando datos pendientes
+    FLUSH_BUF_OUT                                       //!< Esperar a que se terminen de enviar los datos pendientes
   };
 
   /**
@@ -108,11 +108,15 @@ public:
     stop2bits         = CSTOP
   };
 
+  /**-------------------------------------------------------------------------------------------------
+   * @brief   Funciones públicas
+   * ------ */
+
   /**
    * @brief   Constructor de la clase - Inicialización de variables y apertura del dispositivo
    */
   Serial (
-    const char* devname                 /** @param   Path al dispositivo serie */
+    const char* devname                                 /** @param  devname     Path al dispositivo serie */
   );
 
   /**
@@ -124,7 +128,7 @@ public:
    * @brief   Determinar si el objeto es válido (está bien construido) o no
    * @note    El objeto es válido si el puerto se ha podido abrir
    */
-  bool                                  /** @return  true si el objeto es válido, false en otro caso */
+  bool                                                  /** @return true: Objeto válido | false: Objeto no válido */
   IsValid () const
     { return bool(fd >= 0); };
 
@@ -134,13 +138,13 @@ public:
    *          para su recuperación en el destructor de la clase.
    * @note    Los valores a utilizar son las constantes definidas en termios.h (ver man termios).
    */
-  bool                                                  /** @return  true si todo fue bien, false si error. */
+  bool                                                  /** @return true: Inicialización correcta | false: error */
   Init (
-    tcflag_t baudrate,                                  /** @param   Velocidad (bits por segundo) a establecer (B50 ... B4000000) */
-    EnFlowControl flowcontrol = NoFlowCtrl,             /** @param   Tipo de control de flujo [ = sin control de flujo ] */
-    EnCharLen charlen = c8bits,                         /** @param   Tamaño del carácter [ = 8  bits ] */
-    EnParity parity = NoParity,                         /** @param   Control de paridad del carácter [ sin control de paridad ] */
-    EnStopBits stopbits = stop1bit                      /** @param   Bits de stop (0: 1 stop bit, CSTOP: 2 stop bits) [ = 0 ] */
+    tcflag_t baudrate,                                  /** @param  baudrate    Velocidad (bits por segundo) a establecer (B50 ... B4000000) */
+    EnFlowControl flowcontrol = NoFlowCtrl,             /** @param  flowcontrol Tipo de control de flujo [ = sin control de flujo ] */
+    EnCharLen charlen = c8bits,                         /** @param  charlen     Tamaño del carácter [ = 8  bits ] */
+    EnParity parity = NoParity,                         /** @param  parity      Control de paridad del carácter [ sin control de paridad ] */
+    EnStopBits stopbits = stop1bit                      /** @param  stopbits    Bits de stop (0: 1 stop bit, CSTOP: 2 stop bits) [ = 0 ] */
   );
 
   /**
@@ -148,90 +152,90 @@ public:
    * @note    El modo de lectura (canónica, etc) depende de los parámetros de configuración pasados a Init.
    * @note    Ver http://tldp.org/HOWTO/Serial-Programming-HOWTO/x115.html para más información.
    */
-  ssize_t                               /** @return  Bytes leidos, -1 si error */
+  ssize_t                                               /** @return -1: error | Bytes leidos */
   Read (
-    uint8_t* buf,                       /** @param   Buffer en el que escribir lo leido */
-    size_t size,                        /** @param   Bytes a leer */
-    uint32_t t_out                      /** @param   Timeout en ms */
+    uint8_t* buf,                                       /** @param  buf    Buffer en el que escribir lo leido */
+    size_t size,                                        /** @param  size   Bytes a leer */
+    uint32_t t_out                                      /** @param  t_out  Timeout en ms */
   );
 
   /**
    * @brief   Escritura al puerto serie
    */
-  ssize_t                               /** @return  Bytes escritos, -1 si error */
+  ssize_t                                               /** @return -1: error | Bytes escritos */
   Write (
-    const uint8_t* buf,                 /** @param   Buffer con los datos a escribir */
-    size_t size                         /** @param   Bytes a escribir */
+    const uint8_t* buf,                                 /** @param  buf   Buffer con los datos a escribir */
+    size_t size                                         /** @param  size  Bytes a escribir */
   );
 
   /**
    * @brief   Escritura al puerto serie de un sólo byte
    */
-  bool                                  /** @return  true si fue bien, false si error */
+  bool                                                  /** @return true: escritura correcta | false: error */
   WriteByte (
-    uint8_t byte                        /** @param   Byte a escribir */
+    uint8_t byte                                        /** @param  byte  Byte a escribir */
   );
 
   /**
    * @brief   Comprueba si se transmitieron todos los datos por la UART serie
    */
-  bool                                  /** @return  true si se tansmitieron datos, false en caso contrario */
+  bool                                                  /** @return true: datos transmitidos | false: error */
   IsTxFIFOEmpty ();
 
   /**
    * @brief   Comprueba si hay datos pendientes de enviar
    */
-  EnPending                             /** @return  Estado del buffer de envío - Véase enum EnPending */
+  EnPending                                             /** @return  Estado del buffer de envío - Véase enum EnPending */
   PendingWrite();
 
   /**
    * @brief   Comprueba si hay datos pendientes de leer
    */
-  EnPending                             /** @return  Estado del buffer de recepción - Véase enum EnPending */
+  EnPending                                             /** @return  Estado del buffer de recepción - Véase enum EnPending */
   PendingRead();
 
   /**
    * @brief   Vaciar buffer de salida
    */
-  void                                  /** @return  void */
+  void                                                  /** @return void */
   ClearBuffer (
-    EnClearOper operation               /** @param   Tipo de operación a realizar: espera o borrado i/o */
+    EnClearOper operation                               /** @param  operation   Tipo de operación a realizar: espera o borrado i/o */
   );
 
   /**
    * @brief   Establecer el estado de las líneas del puerto serie
    */
-  bool                                  /** @return  false si error */
+  bool                                                  /** @return true: Comando completado con éxito | false: error */
   SetLine (
-    SerialLine line,                    /** @param   Línea a controlar */
-    bool mode                           /** @param   Valor a establecer (on/off) */
+    SerialLine line,                                    /** @param  line    Línea a controlar */
+    bool mode                                           /** @param  mode    Valor a establecer (on/off) */
   );
 
   /**
    * @brief   Recuperar el estado de las líneas del puerto serie
    */
-  int                                   /** @return  1 si la línea está activa, 0 si está inactiva, -1 si error */
+  int                                                   /** @return 1: línea activa | 0: línea inactiva | -1: error */
   GetLine (
-    SerialLine line                     /** @param   Línea a controlar */
+    SerialLine line                                     /** @param  line    Línea a controlar */
   );
 
   /**
    * @brief   Conversión del parámetro de velocidad del puerto de entero a constante válida para Init.
    */
   static
-  tcflag_t                              /** @return  Constante correspondiente o la inmediata superior; 0 si no es válida y se pidió estricta */
+  tcflag_t                                              /** @return Constante correspondiente o la inmediata superior | 0: velocidad no válida (sólo con strict == true) */
   GetBaudCode (
-    uint32_t baudrate,                  /** @param   Valor de velocidad requerido */
-    bool strict = false                 /** @param   ¿Requerida estrictamente la velocidad del parámetro? */
+    uint32_t baudrate,                                  /** @param  baudrate    Valor de velocidad requerido */
+    bool strict = false                                 /** @param  strict      true: Requerida estrictamente la velocidad del parámetro | false: velocidad más próxima */
   );
 
   /**
    * @brief   Obtener el valor de velocidad correspondiente al flag de termios.
    */
   static
-  uint32_t                              /** @return Valor correspondiente de bps, o 0 si el flag no es válido */
+  uint32_t                                              /** @return Valor correspondiente de bps | 0: flag no válido */
   GetBaudValue(
-    tcflag_t p_flag                     /** @param  Flag a evaluar */
+    tcflag_t p_flag                                     /** @param  p_flag  Flag a evaluar */
   );
 
 protected:
@@ -240,13 +244,13 @@ protected:
    */
   struct Uint2Tcflag
   {
-    uint32_t baud;                      // Baudrate
-    tcflag_t flag;                      // Flag del sistema
+    uint32_t baud;                                      // Baudrate
+    tcflag_t flag;                                      // Flag del sistema
   };
 
-  int      fd;                          //!< File descriptor
-  termios* prev_tio;                    //!< Configuración anterior del puerto, para restaurarla al salir
-  static Uint2Tcflag uint2tcflag[];     //!< Tabla de equivalencias de flags y valores de bps
+  int      fd;                                          //!< File descriptor
+  termios* prev_tio;                                    //!< Configuración anterior del puerto, para restaurarla al salir
+  static Uint2Tcflag uint2tcflag[];                     //!< Tabla de equivalencias de flags y valores de bps
 };
 
 #endif // __LIBSERIAL_H__
