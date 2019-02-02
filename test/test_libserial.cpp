@@ -1,12 +1,12 @@
 /**
  * libserial
- * Módulo libserial: Manejo de comunicaciones por puerto serie
+ * Manejo de comunicaciones por puerto serie
  *
  * @file      test_libserial.cpp
  * @brief     Pruebas unitarias
  * @author    José Luis Sánchez Arroyo
- * @date      2016.06.03
- * @version   1.3.3
+ * @date      2019.02.01
+ * @version   1.5.0
  *
  * Copyright (c) 2005-2016 José Luis Sánchez Arroyo
  * This software is distributed under the terms of the LGPL version 2 and comes WITHOUT ANY WARRANTY.
@@ -23,7 +23,7 @@
 #include <iostream>
 #include <vector>
 
-MainVersion(test_libserial, 1.3.3)                      //!< Nombre y versión del programa
+MainVersion(test_libserial, 1.5.0)                      //!< Nombre y versión del programa
 
 /**--------------------------------------------------------------------------------------------------
  * @brief       Constantes de configuración
@@ -276,7 +276,7 @@ int main(int argc, char* argv[])
       bytes.push_back(argv[param]);
     }
   }
-  std::cout << "Parámetros: device='" << serial_dev << "'  speed=" << Serial::GetBaudValue(Serial::GetBaudCode(serial_bps)) << "  timeout=" << serial_timeout << std::endl;
+  std::cout << "Parámetros: device='" << serial_dev << "'  speed=" << serial_bps << "  timeout=" << serial_timeout << std::endl;
   if (bytes.size() > 0)
   {
     std::cout << "Mensaje   : ";
@@ -286,8 +286,8 @@ int main(int argc, char* argv[])
   }
 
   /*--- Apertura del puerto serie ---*/
-  Serial port(serial_dev);
-  if (port.Init(Serial::GetBaudCode(serial_bps)) == false)
+  Serial port;
+  if (port.Open(serial_dev, serial_bps) == false)
     Logger(Log::Error) << "Error abriendo / configurando el puerto serie" << Log::end;
 
   /*--- Enviar y recibir mensaje ---*/

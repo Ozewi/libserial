@@ -1,16 +1,14 @@
 /**
  * libserial
- * Módulo libserial: Manejo de comunicaciones por puerto serie
+ * Manejo de comunicaciones por puerto serie
  *
  * @file      libserial.cpp
  * @brief     Clase de manejo del puerto serie
- * @author    Íñigo López-Barranco Muñiz
  * @author    José Luis Sánchez Arroyo
- * @author    David Serrano
- * @date      2017.05.09
- * @version   1.4.0
+ * @date      2019.02.01
+ * @version   1.5.0
  *
- * Copyright (c) 2005-2017 José Luis Sánchez Arroyo
+ * Copyright (c) 2005-2019 José Luis Sánchez Arroyo
  * This software is distributed under the terms of the LGPL version 2 and comes WITHOUT ANY WARRANTY.
  * Please read the file COPYING.LIB for further details.
  */
@@ -18,51 +16,19 @@
 #include "libserial.h"
 #include <libUtility/timer.h>
 #include <fcntl.h>
-#include <string.h>
 #include <sys/poll.h>
 #include <errno.h>
-#include <stdio.h>
 
 /**-------------------------------------------------------------------------------------------------
- * @brief   Tabla de equivalencias de los valores de velocidad (bps) y los flags de termios
- * ------ */
-Serial::Uint2Tcflag Serial::uint2tcflag [] =
-{
-  {     50, B50     },
-  {     75, B75     },
-  {    110, B110    },
-  {    134, B134    },
-  {    150, B150    },
-  {    200, B200    },
-  {    300, B300    },
-  {    600, B600    },
-  {   1200, B1200   },
-  {   1800, B1800   },
-  {   2400, B2400   },
-  {   4800, B4800   },
-  {   9600, B9600   },
-  {  19200, B19200  },
-  {  38400, B38400  },
-  {  57600, B57600  },
-  { 115200, B115200 },
-  { 230400, B230400 },
-  { 460800, B460800 },
-  { 500000, B500000 }
-};
-
-/**-------------------------------------------------------------------------------------------------
- * @brief   Clase Serial - Funciones públicas
+ * @brief   Clase Serial: Manejo del puerto serie
  * ------ */
 
 /**
- * @brief   Constructor de la clase - Inicialización de variables y apertura del dispositivo
+ * @brief   Constructor de la clase - Inicialización de variables
  */
-Serial::Serial(const char* devname)
+Serial::Serial()
+  : handle(-1), prev_tio()
 {
-  fd = -1;
-  prev_tio = 0;
-  if (devname)
-    fd = open(devname, O_RDWR | O_NOCTTY | O_NDELAY);
 }
 
 /**
@@ -70,47 +36,55 @@ Serial::Serial(const char* devname)
  */
 Serial::~Serial()
 {
-  if (fd >= 0 && prev_tio)
-    tcsetattr(fd, TCSANOW, prev_tio);
-  if (fd >= 0)  close (fd);
-  if (prev_tio) delete prev_tio;
+  Close();
 }
 
 /**
- * @brief   Inicialización del puerto serie
+ * @brief     Apertura e inicialización del puerto serie
  */
-bool Serial::Init(tcflag_t baudrate, EnFlowControl flowcontrol, EnCharLen charlen, EnParity parity, EnStopBits stopbits)
+bool Serial::Open(const char* devname, uint32_t baudrate, EnLockingMode lockmode, EnFlowControl flowcontrol, EnCharLen charlen, EnParity parity, EnStopBits stopbits)
 {
-  if (!IsValid())
+  if (IsOpen() || devname == nullptr)                   // Ya estaba abierto o parámetro erróneo
     return false;
-  if (prev_tio == 0)                                    // Se recoge la configuración anterior sólo la primera vez.
-  {
-    prev_tio = new termios;
-    if (tcgetattr(fd, prev_tio) == -1)
-      return false;                                     // No se puede obtener información del puerto
-  }
 
-  termios tio;                                          // Establecer nuevos parámetros del puerto
-  memset(&tio, 0, sizeof(termios));
+  tcflag_t baud_code = GetBaudCode(baudrate);           // Obtener el código de baudrate correspondiente
+  if (baud_code == 0)
+    return false;
 
+  handle = open(devname, O_RDWR | O_NOCTTY | lockmode);
+  if (handle < 0)                                       // Error de apertura
+    return false;
+
+  if (tcgetattr(handle, &prev_tio) < 0)                 // Guardar la anterior configuración del terminal
+    return false;
+
+  termios tio = {};                                     // Establecer nuevos parámetros del puerto
   tio.c_iflag = (flowcontrol & (IXON | IXOFF)) | IGNPAR | (parity)? INPCK : 0;
   tio.c_oflag = 0;
   tio.c_cflag = (charlen & CSIZE) | (stopbits & CSTOPB) | CLOCAL | CREAD | (parity? (PARENB | (parity & PARODD)) : 0) | (flowcontrol & CRTSCTS);
   tio.c_lflag = 0;
-
   tio.c_cc[VTIME] = 0;                                  // Timeout por omisión desactivado
   tio.c_cc[VMIN]  = 1;                                  // Mínimo de caracteres a leer
+  cfsetospeed(&tio, baud_code);
+  cfsetispeed(&tio, baud_code);
+  if (tcflush(handle, TCIFLUSH) < 0 || tcsetattr(handle, TCSANOW, &tio) < 0)
+    return false;
+  return true;
+}
 
-  cfsetospeed(&tio, baudrate);
-  cfsetispeed(&tio, baudrate);
-
-  if (tcflush(fd, TCIFLUSH) != -1 &&                    // Limpiar buffers y
-      tcsetattr(fd, TCSANOW, &tio) != -1)               // actualizar parámetros
-  {
-    tcgetattr(fd, &tio);
-    return true;
-  }
-  return false;
+/**
+ * @brief   Cierre del puerto y restauración de la configuración anterior
+ */
+bool Serial::Close(bool flush)
+{
+  if (!IsOpen())
+    return false;
+  if (flush)
+    tcdrain(handle);
+  tcsetattr(handle, TCSANOW, &prev_tio);
+  close(handle);
+  handle = -1;
+  return true;
 }
 
 /**
@@ -118,16 +92,22 @@ bool Serial::Init(tcflag_t baudrate, EnFlowControl flowcontrol, EnCharLen charle
  */
 ssize_t Serial::Read(uint8_t* buf, size_t size, uint32_t t_out)
 {
-  if (!IsValid() || !buf)
+  if (!IsOpen() || buf == nullptr)
     return -1;
-  if (!t_out)                                           // Lectura sin timeout (tal vez bloqueante)
-    return read(fd, buf, size);
+
+  ssize_t rt = 0;
+  if (t_out == NO_TIMEOUT)                              // Lectura sin timeout - si Blocking, espera indefinidamente; si NonBlocking, sale al momento.
+  {
+    rt = read(handle, buf, size);
+    if (rt < 0 && errno == EAGAIN)                      // Lectura no bloqueante: no ha habido un error, es que no hay nada que leer
+      return 0;
+    return rt;
+  }
 
   pollfd p_list;
-  p_list.fd = fd;
+  p_list.fd = handle;
   p_list.events = POLLIN;
   int err;
-  ssize_t rt = 0;
   Timer timer;
   timer.SetAlarm(t_out);
   for (rt = 0; rt < static_cast<ssize_t>(size); )
@@ -137,12 +117,9 @@ ssize_t Serial::Read(uint8_t* buf, size_t size, uint32_t t_out)
     while (err < 0 && errno == EINTR);                  // Continuar a la espera si se recibe EINTR
     if (err <= 0 || timer.IsExpired())                  // Salida con error o timeout
       break;
-    err = read(fd, &buf[rt], size - rt);                // Se supone que esto leerá algo...
+    err = read(handle, &buf[rt], size - rt);            // Se supone que esto leerá algo...
     if (err < 0)                                        // Error de lectura
-    {
-      perror("Serial::Read: read");
       break;
-    }
     rt += err;
   }
   return rt;
@@ -153,15 +130,10 @@ ssize_t Serial::Read(uint8_t* buf, size_t size, uint32_t t_out)
  */
 ssize_t Serial::Write(const uint8_t* buf, size_t size)
 {
-  if (!IsValid() || !buf)
+  if (!IsOpen() || buf == nullptr)
     return -1;
-  ssize_t bytes = write(fd, buf, size);
-  if (bytes < 0)
-  {
-    perror("Serial::Write: write");
-    return -1;
-  }
-  return bytes;
+  ssize_t bytes = write(handle, buf, size);
+  return (bytes >= 0)? bytes : -1;
 }
 
 /**
@@ -169,52 +141,35 @@ ssize_t Serial::Write(const uint8_t* buf, size_t size)
  */
 bool Serial::WriteByte(uint8_t byte)
 {
-  if (!IsValid())
+  if (!IsOpen())
     return false;
-  if (write(fd, &byte, 1) == 1)
-    return true;
-  perror("Serial::WriteByte");
-  return false;
-}
-
-/**
- * @brief   Comprueba si se transmitieron todos los datos por la UART serie
- */
-bool Serial::IsTxFIFOEmpty()
-{
-  bool ret = false;
-  int lsr = 0;
-  if (ioctl(fd, TIOCSERGETLSR, &lsr) != -1)             // lectura de line status register
-  {
-    if (lsr & TIOCSER_TEMT)                             // FIFO y shift register vacíos
-      ret = true;
-  }
-  return ret;
+  return (write(handle, &byte, 1) == 1);
 }
 
 /**
  * @brief   Comprueba si hay datos pendientes de enviar
  */
-Serial::EnPending Serial::PendingWrite()
+int Serial::PendingWrite()
 {
-  EnPending rt = PENDING_ERROR;
-  int lsr = 0;
-  if (ioctl(fd, TIOCSERGETLSR, &lsr) != -1)             // lectura de line status register
-    rt = (lsr & TIOCSER_TEMT)? PENDING_EMPTY : PENDING_PENDING; // FIFO y shift register vacíos
-  return rt;
+  int pending, lsr;
+  if (ioctl(handle, TIOCSERGETLSR, &lsr) < 0)           // lectura de line status register
+    return PENDING_ERROR;
+  if (lsr & TIOCSER_TEMT)                               // FIFO y shift register vacíos
+    return PENDING_EMPTY;
+  if (ioctl(handle, TIOCOUTQ, &pending) < 0)
+    return PENDING_ERROR;
+  return pending;
 }
 
 /**
  * @brief   Comprueba si hay datos pendientes de leer
  */
-Serial::EnPending Serial::PendingRead()
+int Serial::PendingRead()
 {
-  EnPending rt = PENDING_ERROR;
-  int pending = 0;
-  if (ioctl(fd, FIONREAD, &pending) != -1)              // lectura del número de bytes pendientes
-    rt = (pending == 0)? PENDING_EMPTY : PENDING_PENDING;
-
-  return rt;
+  int pending;
+  if (ioctl(handle, TIOCINQ, &pending) < 0)
+    return PENDING_ERROR;
+  return pending;
 }
 
 /**
@@ -222,18 +177,18 @@ Serial::EnPending Serial::PendingRead()
  */
 void Serial::ClearBuffer(EnClearOper operation)
 {
-  if (IsValid())
+  if (IsOpen())
   {
     switch (operation)
     {
       case CLEAR_BUF_IN:                                // Borrar buffer de entrada
-        tcflush(fd, TCIFLUSH);
+        tcflush(handle, TCIFLUSH);
         break;
       case CLEAR_BUF_OUT:                               // Borrar buffer de salida
-        tcflush(fd, TCOFLUSH);
+        tcflush(handle, TCOFLUSH);
         break;
       case FLUSH_BUF_OUT:                               // Esperar vaciado del buffer de salida
-        tcdrain(fd);	                                  // El kernel ha volcado los datos a la UART
+        tcdrain(handle);                                // El kernel ha volcado los datos a la UART
         break;
     }
   }
@@ -244,25 +199,17 @@ void Serial::ClearBuffer(EnClearOper operation)
  */
 bool Serial::SetLine(SerialLine line, bool mode)
 {
-  if (!IsValid())
+  if (!IsOpen())
     return false;
   unsigned flags;
-  if (ioctl(fd, TIOCMGET, &flags) < 0)
-  {
-    perror("Serial::SetLine: ioctl (get)");
+  if (ioctl(handle, TIOCMGET, &flags) < 0)
     return false;
-  }
 
   if (mode)
     flags |= line;
   else
     flags &= ~line;
-  if (ioctl(fd, TIOCMSET, &flags) < 0)
-  {
-    perror("Serial::SetLine: ioctl (set)");
-    return false;
-  }
-  return true;
+  return (ioctl(handle, TIOCMSET, &flags) >= 0);
 }
 
 /**
@@ -270,45 +217,77 @@ bool Serial::SetLine(SerialLine line, bool mode)
  */
 int Serial::GetLine(SerialLine line)
 {
-  if (!IsValid())
+  if (!IsOpen())
     return -1;
   unsigned flags;
-  if (ioctl(fd, TIOCMGET, &flags) < 0)
-  {
-    perror("Serial::GetLine: ioctl (get)");
+  if (ioctl(handle, TIOCMGET, &flags) < 0)
     return -1;
-  }
   if (flags & line)
     return 1;
   return 0;
 }
-
 /**
- * @brief   Conversión del parámetro de velocidad del puerto de entero a constante válida para Init.
+ * @brief   Establecer el modo de lectura (bloqueante o no bloqueante)
  */
-tcflag_t Serial::GetBaudCode(uint32_t baudrate, bool strict)
+bool Serial::SetBlocking (EnLockingMode mode)
 {
-  tcflag_t rt = 0;
-
-  for (unsigned i = 0; i < sizeof(uint2tcflag) / sizeof(uint2tcflag[0]) && rt == 0; ++i)
-    if (uint2tcflag[i].baud == baudrate)
-      rt = uint2tcflag[i].flag;
-    else if (uint2tcflag[i].baud > baudrate)
-    {
-      if (strict)                                       // i.e. return 0
-        break;
-      rt = uint2tcflag[i].flag;
-    }
-  return rt;
+  if (!IsOpen())
+    return false;
+  int flags = fcntl(handle, F_GETFL, 0);
+  if (flags == -1)
+    return false;
+  if (mode)
+    flags |= O_NDELAY;
+  else
+    flags &= ~O_NDELAY;
+  return (fcntl(handle, F_SETFL, flags) >= 0);
 }
 
+/**------------------------------------------
+ * @brief     Funciones privadas
+ * ------ */
+
 /**
- * @brief   Obtener el valor de velocidad correspondiente al flag de termios.
+ * @brief     Conversión del parámetro de velocidad del puerto de entero a constante válida para Init.
  */
-uint32_t Serial::GetBaudValue(tcflag_t p_flag)
+tcflag_t Serial::GetBaudCode(uint32_t baudrate)
 {
-  for (unsigned i = 0; i < sizeof(uint2tcflag) / sizeof(uint2tcflag[0]); ++i)
-    if (uint2tcflag[i].flag == p_flag)
-      return uint2tcflag[i].baud;
-  return 0;                                             // invalid code
+  static Uint2Tcflag uint2tcflag[] =                    //!< Tabla de equivalencias de flags y valores de bps
+  {
+    { 4000000, B4000000 },
+    { 3500000, B3500000 },
+    { 3000000, B3000000 },
+    { 2500000, B2500000 },
+    { 2000000, B2000000 },
+    { 1500000, B1500000 },
+    { 1152000, B1152000 },
+    { 1000000, B1000000 },
+    {  921600, B921600  },
+    {  576000, B576000  },
+    {  500000, B500000  },
+    {  460800, B460800  },
+    {  230400, B230400  },
+    {  115200, B115200  },
+    {   57600, B57600   },
+    {   38400, B38400   },
+    {   19200, B19200   },
+    {    9600, B9600    },
+    {    4800, B4800    },
+    {    2400, B2400    },
+    {    1800, B1800    },
+    {    1200, B1200    },
+    {     600, B600     },
+    {     300, B300     },
+    {     200, B200     },
+    {     150, B150     },
+    {     134, B134     },
+    {     110, B110     },
+    {      75, B75      },
+    {      50, B50      },
+  };
+
+  for (auto iter : uint2tcflag)
+    if (iter.baud <= baudrate)
+      return iter.flag;
+  return 0;                                           // fallback
 }

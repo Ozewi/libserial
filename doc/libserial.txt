@@ -1,176 +1,119 @@
-/**
- * libserial
- * Módulo libserial: Manejo de comunicaciones por puerto serie
- *
- * @file      libserial.txt
- * @brief     Documentación de la librería
- * @author    José Luis Sánchez Arroyo
- * @date      2016.04.27
- * @version   1.2.3
- *
- * Copyright (c) 2005-2016 José Luis Sánchez Arroyo
- * This software is distributed under the terms of the LGPL version 2 and comes WITHOUT ANY WARRANTY.
- * Please read the file COPYING.LIB for further details.
- */
+@setright 120
+                          libserial: Biblioteca de manejo de comunicaciones por puerto serie
+                                                 Documentación de uso
 
-====================================================================================================
-
-0. Indice
----------
-
-1. Introducción 
-
-2. Utilización
-
-3. Descripción de funciones
-
-4. Errores conocidos
-
-====================================================================================================
+Fecha:   2019.02.01
+Versión: 1.5.0
 
 1. Introducción
 ---------------
 
-Esta librería encapsula el manejo de puertos serie en una sola clase, incluyendo las funciones de
-configuración, lectura y escritura.
+El "puerto serie" es probablemente el recurso más universal para comunicaciones entre dispositivos. En el entorno del
+ordenador personal, el puerto serie ha mutado hacia el USB, que estrictamente también es un puerto serie, aunque con
+características y operativa específicas y mucho más definidas. En entornos embebidos, sin embargo, el puerto serie
+sigue siendo una herramienta básica para comunicar el sistema principal y sus periféricos.
 
-Cada instancia de la clase representa un puerto serie.
+La operativa básica del puerto serie es muy sencilla, abstraída por el sistema operativo como un acceso a un archivo
+especial. Sin embargo, el puerto serie es lo bastante complejo como para requerir un manejo especial en algunas
+circunstancias. En estos casos, la documentación del sistema operativo no siempre es clara o completa.
 
+El propósito de esta librería es facilitar la operativa básica con un comportamiento definido por omisión, al tiempo
+que se proporcionan métodos documentados para operativas más complejas.
 
-====================================================================================================
-
-2. Utilización
---------------
-
-
-
-====================================================================================================
-
-3. Descripción de funciones
----------------------------
-
-Toda la funcionalidad está encapsulada en una sola clase, Serial.
-
- Constructor
- -----------
-  Función: Inicialización de variables y apertura del dispositivo
-  Entrada: devname      Path al dispositivo serie
-  Salida : -
-
- Destructor
- ----------
-  Función: Devuelve el puerto serie a su configuración anterior
-  Entrada: -
-  Salida : -
-
- Init
- ----
-  Función: Inicialización del puerto serie
-  Entrada: baudrate     Velocidad (bits por segundo) a establecer (B50 ... B4000000)
-  Entrada: flowcontrol  Tipo de control de flujo [ = 0 ]
-                                0       : Sin control de flujo
-                                CRTSCTS : Control de flujo hardware
-                                IXON    : Control de flujo XON/XOFF (output)
-                                IXOFF   : Control de flujo XON/XOFF (input)
-  Entrada: charlen      Tamaño del carácter [ = CS8 ]
-                                CS5     : 5 bits
-                                CS6     : 6 bits
-                                CS7     : 7 bits
-                                CS8     : 8 bits
-  Entrada: parity       Tipo de paridad [ = 0 ]
-                                0       : Sin paridad
-                                PARODD  : Paridad impar
-                                PARENB  : Paridad par
-  Entrada: stopbits     Bits de stop [ = 0 ]
-                                0       : 1 bit de stop bit
-                                CSTOP   : 2 bits de stop
-
-  Inicializa el puerto serie con los parámetros indicados, guardando los que tenía anteriormente
-  para su recuperación en el destructor de la clase.
-  Si canonical es false, se desactivan el timeout y la lectura bloqueante.
-  Véase: man tcsetattr
-
- Read
- ----
-  Función: Lectura del puerto serie
-  Entrada: buf          Buffer en el que escribir lo leido
-  Entrada: size         Bytes a leer
-  Entrada: t_out        Timeout en ms
-  Salida : Bytes leidos, -1 si error
-
-  El modo de lectura (canónica, etc) depende de los parámetros de configuración pasados a Init.
-  Ver http://tldp.org/HOWTO/Serial-Programming-HOWTO/x115.html para más información.
-
- Write
- -----
-  Función: Escritura al puerto serie
-  Entrada: buf          Buffer con los datos a escribir
-  Entrada: size         Bytes a escribir
-  Salida : Bytes escritos, -1 si error
+Puede encontrarse más información sobre la programación del puerto serie aquí:
+http://tldp.org/HOWTO/Serial-Programming-HOWTO/x115.html para más información.
 
 
- WriteByte
- ---------
-  Función: Escritura al puerto serie de un sólo byte
-  Entrada: byte         Byte a escribir
-  Salida : true si fue bien, false si error
+2. Operativa de las comunicaciones por puerto serie
+---------------------------------------------------
 
- IsTxFIFOEmpty 
- -------------
-  Función: Comprueba si se transmitieron todos los datos por la UART serie
-  Entrada: -
-  Salida : true si se tansmitieron datos, false en caso contrario
+La operativa se puede dividir en tres partes: configuración, entrada/salida y control.
 
- ClearBuffer
- -----------
-  Función: Vaciar buffer de salida
-  Entrada: operation    Tipo de operación a realizar
-                                CLEAR_BUF_IN    : Borra el buffer de entrada
-                                CLEAR_BUF_OUT   : Borra el buffer de salida
-                                FLUSH_BUF_OUT   : Vacía el buffer de salida esperando que se acaben de enviar los datos
-  Salida : -
+La configuración consiste en establecer los parámetros de comunicaciones tales como velocidad (baudrate), tamaño de
+carácter, bits de arranque y parada, etc., así como los parámetros de operación como modo de lectura, control de flujo,
+etc. Esta configuración se establece al abrir el dispositivo.
 
- SetLine
- -------
-  Función: Establecer el estado de las líneas del puerto serie
-  Entrada: line         Línea a controlar
-  Entrada: mode         Valor a establecer (on/off)
-  Salida : false si error
+La entrada/salida consiste en enviar y recibir datos a través del puerto, utilizando las funciones de lectura y
+escritura.
 
-  Los posibles valores para el parámetro line son los siguientes:
-    LINE_LE    
-    LINE_DTR   DTR (Data Terminal Ready)
-    LINE_RTS   RTS (Ready To Send)
-    LINE_ST    ST (Serial Transmit)
-    LINE_SR    SR (Serial Receive)
-    LINE_CTS   CTS (Clear To Send)
-    LINE_CAR   
-    LINE_RNG   RNG (Ring)
-    LINE_DSR   DSR (Data Send Ready)
-  
- GetLine
- -------
-  Función: Recuperar el estado de las líneas del puerto serie
-  Entrada: line          Línea a controlar
-  Salida : 1 si la línea está activa, 0 si está inactiva, -1 si error
+El control consiste en supervisar el estado de la comunicación y del puerto, en concreto las colas de entrada y salida
+y el estado de las líneas de control.
 
-  Los valores del parámetro line son los mismos que los de la función SetLine.
 
- GetBaudCode
- -----------
-  Función: Conversión del parámetro de velocidad del puerto de entero a constante válida para Init.
-  Entrada: baudrate     Valor de velocidad requerido
-           strict       ¿Requerida estrictamente la velocidad del parámetro? [ = false ]
-  Salida : Constante correspondiente o la inmediata superior; 0 si no es válida y se pidió estricta
+3. Uso de la clase
+------------------
 
-  La función devuelve el código de velocidad más aproximado a la velocidad requerida.
-  Si se solicita el código estricto, la función devuelve un error en caso de que el valor no coincida
-  con ningún valor de velocidad válido.
+La funcionalidad al completo está encapsulada en una sola clase.
 
-====================================================================================================
+Una vez construido el objeto, la primera función a utilizar será Open. El resto de funciones devolverá error si no se
+dispone de un puerto abierto y configurado.
 
-4. Errores conocidos
---------------------
+La función Open acepta muchos parámetros para definir la configuración del puerto, pero solamente dos de ellos son
+obligatorios: el path al dispositivo (como "/dev/ttyS0") y la velocidad (baudrate) requerido. El puerto serie solo
+admite un conjunto discreto de valores de velocidad; la clase calcula el valor de baudrate inferior más cercano.
 
-* Un puerto serie no se puede abrir más de una vez, pero no se toma ninguna medida para impedirlo
-  (el sistema dará un error cuando se intente).
+Las funciones Read, Write y WriteByte se emplean para enviar y recibir datos. Los sistemas operativos suelen ofrecer
+búferes de entrada/salida de muy corta capacidad; esto pone el foco en los mecanismos para controlar el flujo de datos
+a través del puerto a fin de evitar efectos indeseados.
+
+Para la lectura de datos se pueden emplear dos estrategias distintas: bloqueante y no bloqueante. La lectura bloqueante
+es conceptualmente más simple: típicamente implica disponer de un thread dedicado a la lectura, que queda bloqueado
+(i.e. inactivo) hasta la recepción de los datos requeridos (o se supere el timeout). Para esta modalidad basta con las
+funciones Read y Write.
+
+Por su parte, la lectura no bloqueante implica realizar un control más detallado del estado del puerto serie. Suele
+implementarse como un bucle iterativo que comprueba frecuentemente el estado del puerto, copia los datos cuando están
+disponibles y los procesa cuando se completa la recepción de un paquete. Aunque más complejo que el anterior, suele ser
+más fácil implementar de este modo protocolos con paquetes diferenciados por delimitadores. Además de Read y Write, en
+este caso se suelen emplear PendingRead y PendingWrite para supervisar el estado de las colas.
+
+
+4. Ejemplos de uso
+------------------
+
+Modalidad de lectura no bloqueante
+
+  Serial puerto;
+  puerto.Open("/dev/ttyUSB0", 115200, Serial::NonBlocking);
+
+  /* ... */
+
+  uint8_t buffer[BUFFER_LENGTH];
+  int pos_buffer;
+  bool loop = true;
+  while (loop)
+  {
+    uint8_t byte;
+    switch (puerto.Read(&byte, 1, Serial::NO_TIMEOUT))
+    {
+      case -1:        // Error
+        perror("Error de lectura");
+        loop = false;
+        break;
+      case 0:         // no hay datos disponibles
+        do_something_else();
+        break;
+      case 1:         // recibido 1 byte
+        buffer[pos_buffer++] = byte;
+        if (byte == terminator)
+        {
+          process_message(buffer, pos_buffer);
+          pos_buffer = 0;
+        }
+        else if (pos_buffer >= BUFFER_LENGTH)
+        {
+          puts("Buffer overrun.");
+          pos_buffer = 0;
+        }
+        break;
+    }
+  }
+
+
+5. Consideraciones de uso
+-------------------------
+
+Ni el sistema operativo ni la librería impiden que varios procesos abran simultáneamente el mismo puerto. Sin embargo,
+debe tenerse en cuenta que cuando dos procesos compiten por leer un puerto serie, los datos recibidos no se duplican
+sino que se reparten entre los procesos competidores; y cuando dos procesos escriben al mismo tiempo, los datos llegan
+intercalados al otro extremo. Se necesitará implementar alguna forma de serializar el acceso para evitarlo.
