@@ -114,7 +114,7 @@ ssize_t Serial::Read(void* buf, size_t size, uint32_t t_out)
   for (rt = 0; rt < static_cast<ssize_t>(size); )
   {
     do
-      err = poll(&p_list, 1, t_out);
+      err = poll(&p_list, 1, timer.GetRemain());
     while (err < 0 && errno == EINTR);                  // Continuar a la espera si se recibe EINTR
     if (err <= 0 || timer.IsExpired())                  // Salida con error o timeout
       break;

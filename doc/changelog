@@ -16,6 +16,7 @@
 1.6.0 (2019.02.04)
 Modificación del interfaz de la clase:
 - Los tipos de puntero de Read y Write ahora son punteros a void. Fin de la pesadilla.
+Bugfix: El timeout de lectura no se reinicia por la llegada de algún carácter.
 
 1.5.0 (2019.02.01)
 Modificación del interfaz de la clase:
