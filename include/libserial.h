@@ -5,8 +5,8 @@
  * @file      libserial.h
  * @brief     Clase de manejo del puerto serie
  * @author    José Luis Sánchez Arroyo
- * @date      2019.02.01
- * @version   1.5.0
+ * @date      2019.02.04
+ * @version   1.6.0
  *
  * Copyright (c) 2005-2019 José Luis Sánchez Arroyo
  * This software is distributed under the terms of the LGPL version 2 and comes WITHOUT ANY WARRANTY.
@@ -160,7 +160,7 @@ public:
    */
   ssize_t                                               /** @return -1: error | Bytes leidos */
   Read (
-    uint8_t* buf,                                       /** @param  buf    Buffer en el que escribir lo leido */
+    void* buf,                                          /** @param  buf    Buffer en el que escribir lo leido */
     size_t size,                                        /** @param  size   Bytes a leer */
     uint32_t t_out                                      /** @param  t_out  Timeout en ms, o NO_TIMEOUT. */
   );
@@ -170,7 +170,7 @@ public:
    */
   ssize_t                                               /** @return -1: error | Bytes escritos */
   Write (
-    const uint8_t* buf,                                 /** @param  buf   Buffer con los datos a escribir */
+    const void* buf,                                    /** @param  buf   Buffer con los datos a escribir */
     size_t size                                         /** @param  size  Bytes a escribir */
   );
 

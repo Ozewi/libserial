@@ -5,8 +5,8 @@
  * @file      libserial.cpp
  * @brief     Clase de manejo del puerto serie
  * @author    José Luis Sánchez Arroyo
- * @date      2019.02.01
- * @version   1.5.0
+ * @date      2019.02.04
+ * @version   1.6.0
  *
  * Copyright (c) 2005-2019 José Luis Sánchez Arroyo
  * This software is distributed under the terms of the LGPL version 2 and comes WITHOUT ANY WARRANTY.
@@ -90,7 +90,7 @@ bool Serial::Close(bool flush)
 /**
  * @brief   Lectura del puerto serie
  */
-ssize_t Serial::Read(uint8_t* buf, size_t size, uint32_t t_out)
+ssize_t Serial::Read(void* buf, size_t size, uint32_t t_out)
 {
   if (!IsOpen() || buf == nullptr)
     return -1;
@@ -99,7 +99,7 @@ ssize_t Serial::Read(uint8_t* buf, size_t size, uint32_t t_out)
   if (t_out == NO_TIMEOUT)                              // Lectura sin timeout - si Blocking, espera indefinidamente; si NonBlocking, sale al momento.
   {
     rt = read(handle, buf, size);
-    if (rt < 0 && errno == EAGAIN)                      // Lectura no bloqueante: no ha habido un error, es que no hay nada que leer
+    if (rt < 0 && errno == EAGAIN)                      // Lectura no bloqueante: esto no es un error, es que no hay nada que leer
       return 0;
     return rt;
   }
@@ -110,6 +110,7 @@ ssize_t Serial::Read(uint8_t* buf, size_t size, uint32_t t_out)
   int err;
   Timer timer;
   timer.SetAlarm(t_out);
+  uint8_t* ptr = reinterpret_cast<uint8_t*>(buf);       // Necesario para poder hacer aritmética de punteros
   for (rt = 0; rt < static_cast<ssize_t>(size); )
   {
     do
@@ -117,7 +118,7 @@ ssize_t Serial::Read(uint8_t* buf, size_t size, uint32_t t_out)
     while (err < 0 && errno == EINTR);                  // Continuar a la espera si se recibe EINTR
     if (err <= 0 || timer.IsExpired())                  // Salida con error o timeout
       break;
-    err = read(handle, &buf[rt], size - rt);            // Se supone que esto leerá algo...
+    err = read(handle, &ptr[rt], size - rt);            // Se supone que esto leerá algo...
     if (err < 0)                                        // Error de lectura
       break;
     rt += err;
@@ -128,7 +129,7 @@ ssize_t Serial::Read(uint8_t* buf, size_t size, uint32_t t_out)
 /**
  * @brief   Escritura al puerto serie
  */
-ssize_t Serial::Write(const uint8_t* buf, size_t size)
+ssize_t Serial::Write(const void* buf, size_t size)
 {
   if (!IsOpen() || buf == nullptr)
     return -1;
