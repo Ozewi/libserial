@@ -5,10 +5,10 @@
  * @file      libserial.cpp
  * @brief     Clase de manejo del puerto serie
  * @author    José Luis Sánchez Arroyo
- * @date      2019.02.04
- * @version   1.6.0
+ * @date      2020.05.22
+ * @version   1.7
  *
- * Copyright (c) 2005-2019 José Luis Sánchez Arroyo
+ * Copyright (c) 2005-2020 José Luis Sánchez Arroyo
  * This software is distributed under the terms of the LGPL version 2 and comes WITHOUT ANY WARRANTY.
  * Please read the file COPYING.LIB for further details.
  */
@@ -24,7 +24,7 @@
  * ------ */
 
 /**
- * @brief   Constructor de la clase - Inicialización de variables
+ * @brief     Constructor de la clase - Inicialización de variables
  */
 Serial::Serial()
   : handle(-1), prev_tio()
@@ -32,7 +32,7 @@ Serial::Serial()
 }
 
 /**
- * @brief   Destructor de la clase - Devuelve el puerto serie a su configuración anterior
+ * @brief     Destructor de la clase - Devuelve el puerto serie a su configuración anterior
  */
 Serial::~Serial()
 {
@@ -73,7 +73,7 @@ bool Serial::Open(const char* devname, uint32_t baudrate, EnLockingMode lockmode
 }
 
 /**
- * @brief   Cierre del puerto y restauración de la configuración anterior
+ * @brief     Cierre del puerto y restauración de la configuración anterior
  */
 bool Serial::Close(bool flush)
 {
@@ -88,7 +88,7 @@ bool Serial::Close(bool flush)
 }
 
 /**
- * @brief   Lectura del puerto serie
+ * @brief     Lectura del puerto serie
  */
 ssize_t Serial::Read(void* buf, size_t size, uint32_t t_out)
 {
@@ -127,7 +127,7 @@ ssize_t Serial::Read(void* buf, size_t size, uint32_t t_out)
 }
 
 /**
- * @brief   Escritura al puerto serie
+ * @brief     Escritura al puerto serie
  */
 ssize_t Serial::Write(const void* buf, size_t size)
 {
@@ -138,7 +138,7 @@ ssize_t Serial::Write(const void* buf, size_t size)
 }
 
 /**
- * @brief   Escritura al puerto serie de un sólo byte
+ * @brief     Escritura al puerto serie de un sólo byte
  */
 bool Serial::WriteByte(uint8_t byte)
 {
@@ -148,7 +148,7 @@ bool Serial::WriteByte(uint8_t byte)
 }
 
 /**
- * @brief   Comprueba si hay datos pendientes de enviar
+ * @brief     Comprueba si hay datos pendientes de enviar
  */
 int Serial::PendingWrite()
 {
@@ -159,11 +159,11 @@ int Serial::PendingWrite()
     return PENDING_EMPTY;
   if (ioctl(handle, TIOCOUTQ, &pending) < 0)
     return PENDING_ERROR;
-  return pending;
+  return pending? pending : 1;
 }
 
 /**
- * @brief   Comprueba si hay datos pendientes de leer
+ * @brief     Comprueba si hay datos pendientes de leer
  */
 int Serial::PendingRead()
 {
@@ -174,7 +174,24 @@ int Serial::PendingRead()
 }
 
 /**
- * @brief   Vaciar buffer de salida
+ * @brief     Espera hasta que se hayan enviado todos los datos
+ */
+bool Serial::WaitSend()
+{
+  while (true)
+    switch (PendingWrite())
+    {
+      case PENDING_ERROR:
+        return false;
+      case PENDING_EMPTY:
+        return true;
+      default:
+        Msleep(1);
+    }
+}
+
+/**
+ * @brief     Vaciar el buffer de entrada, de salida, o ambos
  */
 void Serial::ClearBuffer(EnClearOper operation)
 {
@@ -196,7 +213,7 @@ void Serial::ClearBuffer(EnClearOper operation)
 }
 
 /**
- * @brief   Establecer el estado de las líneas del puerto serie
+ * @brief     Establecer el estado de las líneas del puerto serie
  */
 bool Serial::SetLine(SerialLine line, bool mode)
 {

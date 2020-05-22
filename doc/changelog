@@ -5,14 +5,18 @@
  * @file      changelog
  * @brief     Historial de revisiones
  * @author    José Luis Sánchez Arroyo
- * @date      2019.02.04
- * @version   1.6.0
+ * @date      2020.05.22
+ * @version   1.7
  *
- * Copyright (c) 2005-2019 José Luis Sánchez Arroyo
+ * Copyright (c) 2005-2020 José Luis Sánchez Arroyo
  * This software is distributed under the terms of the LGPL version 2 and comes WITHOUT ANY WARRANTY.
  * Please read the file COPYING.LIB for further details.
  */
-----------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------
+1.7 (2020.05.22)
+Añadida la función WaitSend().
+Corregido un error en PendingWrite: si solo quedaba el byte del shift register, se devolvía 0.
+
 1.6.0 (2019.02.04)
 Modificación del interfaz de la clase:
 - Los tipos de puntero de Read y Write ahora son punteros a void. Fin de la pesadilla.
@@ -48,8 +52,7 @@ El programa de test ahora admite que el mensaje a enviar sea opcional y el tiemp
 Añadido un programa de test.
 
 1.3.0 (2016.05.03)
-Nuevas funciones PendingRead y PendingWrite para determinar si quedan datos en los buffers de
-entrada y salida.
+Nuevas funciones PendingRead y PendingWrite para determinar si quedan datos en los buffers de entrada y salida.
 
 1.2.3 (2016.04.27)
 Eliminadas un par de trazas que andaban por ahí perdidas.
@@ -66,8 +69,7 @@ Reordenación de código, moviendo las cabeceras al directorio raíz del módulo
 Información para doxygen movida a las cabeceras.
 
 1.1.4 (2008.07.15)
-Se incluye función IsTxFIFOempty para comprobar si la UART serie transmitió todos los datos del
-buffer.
+Se incluye función IsTxFIFOempty para comprobar si la UART serie transmitió todos los datos del buffer.
 
 1.1.3 (2008.02.15)
 Corrección al fijar la velocidad, a lo POSIX.

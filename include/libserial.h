@@ -5,10 +5,10 @@
  * @file      libserial.h
  * @brief     Clase de manejo del puerto serie
  * @author    José Luis Sánchez Arroyo
- * @date      2019.02.04
- * @version   1.6.0
+ * @date      2020.05.22
+ * @version   1.7
  *
- * Copyright (c) 2005-2019 José Luis Sánchez Arroyo
+ * Copyright (c) 2005-2020 José Luis Sánchez Arroyo
  * This software is distributed under the terms of the LGPL version 2 and comes WITHOUT ANY WARRANTY.
  * Please read the file COPYING.LIB for further details.
  */
@@ -195,7 +195,13 @@ public:
   PendingRead();
 
   /**
-   * @brief   Vaciar buffer de salida
+   * @brief   Espera hasta que se hayan enviado todos los datos
+   */
+  bool                                                  /** @return true: Operación completada con éxito | false: error */
+  WaitSend();
+
+  /**
+   * @brief   Vaciar el buffer de entrada, de salida, o ambos
    */
   void                                                  /** @return void */
   ClearBuffer (

@@ -5,10 +5,10 @@
  * @file      version.cpp
  * @brief     Información de versión de la biblioteca
  * @author    José Luis Sánchez Arroyo
- * @date      2019.02.04
- * @version   1.6.0
+ * @date      2020.05.22
+ * @version   1.7
  *
- * Copyright (c) 2005-2019 José Luis Sánchez Arroyo
+ * Copyright (c) 2005-2020 José Luis Sánchez Arroyo
  * This software is distributed under the terms of the LGPL version 2 and comes WITHOUT ANY WARRANTY.
  * Please read the file COPYING.LIB for further details.
  */
@@ -17,4 +17,4 @@
 
 /** @brief Declaración de la versión de la biblioteca */
 
-ModuleVersion(libserial, 1.6.0)
+ModuleVersion(libserial, 1.7)
