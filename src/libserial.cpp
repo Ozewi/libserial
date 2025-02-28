@@ -5,19 +5,20 @@
  * @file      libserial.cpp
  * @brief     Clase de manejo del puerto serie
  * @author    José Luis Sánchez Arroyo
- * @date      2020.05.22
- * @version   1.7
+ * @date      2025.02.28
+ * @version   1.8
  *
- * Copyright (c) 2005-2020 José Luis Sánchez Arroyo
+ * Copyright (c) 2005-2025 José Luis Sánchez Arroyo
  * This software is distributed under the terms of the LGPL version 2 and comes WITHOUT ANY WARRANTY.
  * Please read the file COPYING.LIB for further details.
  */
 
 #include "libserial.h"
-#include <libUtility/timer.h>
 #include <fcntl.h>
 #include <sys/poll.h>
 #include <errno.h>
+#include <chrono>               // std::chrono
+#include <thread>               // std::this_thread::sleep_for
 
 /**-------------------------------------------------------------------------------------------------
  * @brief   Clase Serial: Manejo del puerto serie
@@ -108,15 +109,16 @@ ssize_t Serial::Read(void* buf, size_t size, uint32_t t_out)
   p_list.fd = handle;
   p_list.events = POLLIN;
   int err;
-  Timer timer;
-  timer.SetAlarm(t_out);
+  auto end_time = std::chrono::system_clock::now() + std::chrono::milliseconds(t_out);
   uint8_t* ptr = reinterpret_cast<uint8_t*>(buf);       // Necesario para poder hacer aritmética de punteros
   for (rt = 0; rt < static_cast<ssize_t>(size); )
   {
     do
-      err = poll(&p_list, 1, timer.GetRemain());
-    while (err < 0 && errno == EINTR);                  // Continuar a la espera si se recibe EINTR
-    if (err <= 0 || timer.IsExpired())                  // Salida con error o timeout
+    {
+      auto remain = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - std::chrono::system_clock::now()).count();
+      err = (remain > 0)? poll(&p_list, 1, remain) : 0; // Si quedan 0 o menos milisegundos, salir con err = 0 (timeout)
+    } while (err < 0 && errno == EINTR);                // Continuar a la espera si se recibe EINTR
+    if (err <= 0)                                       // Salida con error o timeout
       break;
     err = read(handle, &ptr[rt], size - rt);            // Se supone que esto leerá algo...
     if (err < 0)                                        // Error de lectura
@@ -186,7 +188,7 @@ bool Serial::WaitSend()
       case PENDING_EMPTY:
         return true;
       default:
-        Msleep(1);
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 }
 
@@ -270,7 +272,7 @@ bool Serial::SetBlocking (EnLockingMode mode)
  */
 tcflag_t Serial::GetBaudCode(uint32_t baudrate)
 {
-  static Uint2Tcflag uint2tcflag[] =                    //!< Tabla de equivalencias de flags y valores de bps
+  static const Uint2Tcflag uint2tcflag[] =              //!< Tabla de equivalencias de flags y valores de bps
   {
     { 4000000, B4000000 },
     { 3500000, B3500000 },
@@ -304,7 +306,7 @@ tcflag_t Serial::GetBaudCode(uint32_t baudrate)
     {      50, B50      },
   };
 
-  for (auto iter : uint2tcflag)
+  for (const auto& iter : uint2tcflag)
     if (iter.baud <= baudrate)
       return iter.flag;
   return 0;                                           // fallback

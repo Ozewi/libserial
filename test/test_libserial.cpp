@@ -225,6 +225,7 @@ void Abort(const char* prog)
 int main(int argc, char* argv[])
 {
   VersionInfo::Show();
+  std::cout << "Using libserial v." << libserial::version() << std::endl;
 
   /*--- Procesamiento de línea de comandos ---*/
   const char* serial_dev = DEFAULT_SERIAL_DEV;

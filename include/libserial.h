@@ -22,6 +22,16 @@
 #include <sys/ioctl.h>                                  // Constantes indicativas de las líneas serial
 #include <fcntl.h>                                      // O_NDELAY
 
+
+namespace libserial {
+
+/**
+ * @brief   Identificador de la versión de la biblioteca
+ */
+const char* version();
+
+}
+
 /**-------------------------------------------------------------------------------------------------
  * @brief   Clase Serial: Manejo del puerto serie
  * ------ */
