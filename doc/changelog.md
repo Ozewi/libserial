@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
+## [2.0] - 2025.03.03
+
+### Added
+- nanoconsole: Programa de test que funciona como una consola cutre.
+
+### Changed
+- Los nombres de los métodos ahora siguen el patrón camelCase.
+- Tests cambiados para usar los nuevos nombres.
+
 ## [1.8] - 2025.02.28
 
 ### Added

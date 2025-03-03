@@ -5,10 +5,10 @@
  * @file      test_libserial.cpp
  * @brief     Pruebas unitarias
  * @author    José Luis Sánchez Arroyo
- * @date      2019.02.01
- * @version   1.5.0
+ * @date      2025.03.03
+ * @version   2.0
  *
- * Copyright (c) 2005-2016 José Luis Sánchez Arroyo
+ * Copyright (c) 2005-2025 José Luis Sánchez Arroyo
  * This software is distributed under the terms of the LGPL version 2 and comes WITHOUT ANY WARRANTY.
  * Please read the file COPYING.LIB for further details.
  */
@@ -23,7 +23,7 @@
 #include <iostream>
 #include <vector>
 
-MainVersion(test_libserial, 1.5.0)                      //!< Nombre y versión del programa
+MainVersion(test_libserial, 2.0)                        //!< Nombre y versión del programa
 
 /**--------------------------------------------------------------------------------------------------
  * @brief       Constantes de configuración
@@ -45,7 +45,7 @@ void ReadData(Serial& port, uint32_t timeout)
   for (timer.SetAlarm(timeout); timer.IsExpired() == false; )
   {
     uint8_t byte;
-    if (port.Read(&byte, 1, timer.GetRemain()) == false)
+    if (port.read(&byte, 1, timer.GetRemain()) == false)
       break;
     printf("%09ld %3d  %02X\n", timer.GetTimeNow() - start_time, ++received, byte);
   }
@@ -64,7 +64,7 @@ void ListenData(Serial& port, uint32_t timeout)
   while (1)
   {
     uint8_t byte;
-    if (port.Read(&byte, 1, timeout) == true)
+    if (port.read(&byte, 1, timeout) == true)
       printf("%09ld %3d  %02X\n", timer.GetTimeNow() - start_time, ++received, byte);
     else if (received > 0)
       break;
@@ -104,7 +104,7 @@ void WriteData(Serial& port, std::vector<const char*>& bytes)
   for (unsigned ix = 0; ix < msg_len; ++ix)
     printf("%02X ", message[ix]);
   std::cout << std::endl;
-  if (port.Write(message, msg_len) == false)
+  if (port.write(message, msg_len) == false)
     std::cout << "Error durante el envío." << std::endl;
   std::cout << "Mensaje enviado.\n";
 }
@@ -125,7 +125,7 @@ void Console(Serial& port)
     {
       case 0:
       case '?':                                 // Help!
-        std::cout << 
+        std::cout <<
           "(w)rite <message>    Enviar datos al puerto serie\n"
           "   message:          Pares de dígitos hexadecimales separados por espacio\n"
           "(r)ead  <time>       Recibir datos del puerto serie\n"
@@ -205,7 +205,7 @@ void Console(Serial& port)
 void Abort(const char* prog)
 {
   std::cout << prog << " : Pruebas de transferencia de datos por puerto serie\n"
-    "Sintaxis: " << prog << " -h | [-d <device>] [-s <speed> [-t <timeout>] [-i | <mensaje>]\n"
+    "Sintaxis: " << prog << " -h | [-d <device>] [-s <speed>] [-t <timeout>] [-i | <mensaje>]\n"
     "  -h : Esta ayuda\n"
     "  -d : Dispositivo de conexión [/dev/ttyS0]\n"
     "       <device>  : Path del dispositivo serie a utilizar\n"
@@ -288,7 +288,7 @@ int main(int argc, char* argv[])
 
   /*--- Apertura del puerto serie ---*/
   Serial port;
-  if (port.Open(serial_dev, serial_bps) == false)
+  if (port.open(serial_dev, serial_bps) == false)
     Logger(Log::Error) << "Error abriendo / configurando el puerto serie" << Log::end;
 
   /*--- Enviar y recibir mensaje ---*/

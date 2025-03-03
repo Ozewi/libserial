@@ -5,8 +5,8 @@
  * @file      libserial.h
  * @brief     Clase de manejo del puerto serie
  * @author    José Luis Sánchez Arroyo
- * @date      2020.05.22
- * @version   1.7
+ * @date      2025.03.03
+ * @version   2.0
  *
  * Copyright (c) 2005-2020 José Luis Sánchez Arroyo
  * This software is distributed under the terms of the LGPL version 2 and comes WITHOUT ANY WARRANTY.
@@ -21,7 +21,7 @@
 #include <unistd.h>                                     // ssize_t
 #include <sys/ioctl.h>                                  // Constantes indicativas de las líneas serial
 #include <fcntl.h>                                      // O_NDELAY
-
+#include <utility>
 
 namespace libserial {
 
@@ -138,7 +138,7 @@ public:
    * @note    Explicación detallada de los parámetros en la descripción de los tipos enumerados.
    */
   bool                                                  /** @return true: Apertura e inicialización correcta | false: error, o el puerto ya estaba abierto */
-  Open (
+  open (
     const char* devname,                                /** @param  devname     Path al dispositivo serie */
     uint32_t baudrate,                                  /** @param  baudrate    Velocidad (bits por segundo) a establecer */
     EnLockingMode lockmode = NonBlocking,               /** @param  lockmode    Modo de bloqueo en lectura (bloqueante o no bloqueante) */
@@ -152,7 +152,7 @@ public:
    * @brief   Cierre del puerto y restauración de la configuración anterior
    */
   bool                                                  /** @return true: Cierre correcto | false: El puerto ya estaba cerrado */
-  Close(
+  close(
     bool flush = false                                  /** @param flush  true: Esperar al vaciado del buffer de escritura antes de cerrar | false: descartar los buffers */
   );
 
@@ -160,7 +160,7 @@ public:
    * @brief   Informa de si el puerto está abierto o no
    */
   bool                                                  /** @return true: El puerto está abierto | false: El puerto está cerrado */
-  IsOpen()
+  isOpen()
   { return (handle >= 0); };
 
   /**
@@ -169,7 +169,7 @@ public:
    *          En modo NonBlocking, NO_TIMEOUT sale inmediatamente con retorno de 0 bytes si no hay datos que leer.
    */
   ssize_t                                               /** @return -1: error | Bytes leidos */
-  Read (
+  read (
     void* buf,                                          /** @param  buf    Buffer en el que escribir lo leido */
     size_t size,                                        /** @param  size   Bytes a leer */
     uint32_t t_out                                      /** @param  t_out  Timeout en ms, o NO_TIMEOUT. */
@@ -179,7 +179,7 @@ public:
    * @brief   Escritura al puerto serie
    */
   ssize_t                                               /** @return -1: error | Bytes escritos */
-  Write (
+  write (
     const void* buf,                                    /** @param  buf   Buffer con los datos a escribir */
     size_t size                                         /** @param  size  Bytes a escribir */
   );
@@ -188,7 +188,7 @@ public:
    * @brief   Escritura al puerto serie de un sólo byte
    */
   bool                                                  /** @return true: escritura correcta | false: error */
-  WriteByte (
+  writeByte (
     uint8_t byte                                        /** @param  byte  Byte a escribir */
   );
 
@@ -196,25 +196,25 @@ public:
    * @brief   Comprueba si hay datos pendientes de enviar
    */
   int                                                   /** @return  PENDING_ERROR: Error de lectura | PENDING_EMPTY: Cola de salida vacía | Bytes pendientes de enviar */
-  PendingWrite();
+  pendingWrite();
 
   /**
    * @brief   Comprueba si hay datos pendientes de leer
    */
   int                                                   /** @return  PENDING_ERROR: Error de lectura | PENDING_EMPTY: Cola de entrada vacía | Bytes pendientes de recibir */
-  PendingRead();
+  pendingRead();
 
   /**
    * @brief   Espera hasta que se hayan enviado todos los datos
    */
   bool                                                  /** @return true: Operación completada con éxito | false: error */
-  WaitSend();
+  waitSend();
 
   /**
    * @brief   Vaciar el buffer de entrada, de salida, o ambos
    */
   void                                                  /** @return void */
-  ClearBuffer (
+  clearBuffer (
     EnClearOper operation                               /** @param  operation   Tipo de operación a realizar: espera o borrado i/o */
   );
 
@@ -222,7 +222,7 @@ public:
    * @brief   Establecer el estado de las líneas del puerto serie
    */
   bool                                                  /** @return true: Comando completado con éxito | false: error */
-  SetLine (
+  setLine (
     SerialLine line,                                    /** @param  line    Línea a controlar */
     bool mode                                           /** @param  mode    Valor a establecer (on/off) */
   );
@@ -231,7 +231,7 @@ public:
    * @brief   Recuperar el estado de las líneas del puerto serie
    */
   int                                                   /** @return 1: línea activa | 0: línea inactiva | -1: error */
-  GetLine (
+  getLine (
     SerialLine line                                     /** @param  line    Línea a controlar */
   );
 
@@ -239,7 +239,7 @@ public:
    * @brief   Establecer el modo de lectura (bloqueante o no bloqueante)
    */
   bool                                                  /** @return true: Comando completado con éxito | false: error */
-  SetBlocking (
+  setBlocking (
     EnLockingMode mode                                  /** @param  mode    Nuevo modo de lectura */
   );
 
@@ -261,7 +261,7 @@ protected:
    * @brief   Conversión del parámetro de velocidad del puerto de entero a constante para termios
    */
   tcflag_t                                              /** @return Constante correspondiente o la inmediata inferior */
-  GetBaudCode (
+  getBaudCode (
     uint32_t baudrate                                   /** @param  baudrate    Valor de velocidad requerido */
   );
 

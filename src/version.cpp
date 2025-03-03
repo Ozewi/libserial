@@ -15,7 +15,7 @@
 
 namespace libserial {
 
-constexpr char LIBRARY_VERSION[] = "1.8";
+constexpr char LIBRARY_VERSION[] = "2.0";
 
 /**
  * @brief   Identificador de la versión de la biblioteca

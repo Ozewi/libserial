@@ -5,8 +5,8 @@
  * @file      libserial.cpp
  * @brief     Clase de manejo del puerto serie
  * @author    José Luis Sánchez Arroyo
- * @date      2025.02.28
- * @version   1.8
+ * @date      2025.03.03
+ * @version   2.0
  *
  * Copyright (c) 2005-2025 José Luis Sánchez Arroyo
  * This software is distributed under the terms of the LGPL version 2 and comes WITHOUT ANY WARRANTY.
@@ -37,22 +37,22 @@ Serial::Serial()
  */
 Serial::~Serial()
 {
-  Close();
+  close();
 }
 
 /**
  * @brief     Apertura e inicialización del puerto serie
  */
-bool Serial::Open(const char* devname, uint32_t baudrate, EnLockingMode lockmode, EnFlowControl flowcontrol, EnCharLen charlen, EnParity parity, EnStopBits stopbits)
+bool Serial::open(const char* devname, uint32_t baudrate, EnLockingMode lockmode, EnFlowControl flowcontrol, EnCharLen charlen, EnParity parity, EnStopBits stopbits)
 {
-  if (IsOpen() || devname == nullptr)                   // Ya estaba abierto o parámetro erróneo
+  if (isOpen() || devname == nullptr)                   // Ya estaba abierto o parámetro erróneo
     return false;
 
-  tcflag_t baud_code = GetBaudCode(baudrate);           // Obtener el código de baudrate correspondiente
+  tcflag_t baud_code = getBaudCode(baudrate);           // Obtener el código de baudrate correspondiente
   if (baud_code == 0)
     return false;
 
-  handle = open(devname, O_RDWR | O_NOCTTY | lockmode);
+  handle = ::open(devname, O_RDWR | O_NOCTTY | lockmode);
   if (handle < 0)                                       // Error de apertura
     return false;
 
@@ -76,14 +76,14 @@ bool Serial::Open(const char* devname, uint32_t baudrate, EnLockingMode lockmode
 /**
  * @brief     Cierre del puerto y restauración de la configuración anterior
  */
-bool Serial::Close(bool flush)
+bool Serial::close(bool flush)
 {
-  if (!IsOpen())
+  if (!isOpen())
     return false;
   if (flush)
     tcdrain(handle);
   tcsetattr(handle, TCSANOW, &prev_tio);
-  close(handle);
+  ::close(handle);
   handle = -1;
   return true;
 }
@@ -91,15 +91,15 @@ bool Serial::Close(bool flush)
 /**
  * @brief     Lectura del puerto serie
  */
-ssize_t Serial::Read(void* buf, size_t size, uint32_t t_out)
+ssize_t Serial::read(void* buf, size_t size, uint32_t t_out)
 {
-  if (!IsOpen() || buf == nullptr)
+  if (!isOpen() || buf == nullptr)
     return -1;
 
   ssize_t rt = 0;
   if (t_out == NO_TIMEOUT)                              // Lectura sin timeout - si Blocking, espera indefinidamente; si NonBlocking, sale al momento.
   {
-    rt = read(handle, buf, size);
+    rt = ::read(handle, buf, size);
     if (rt < 0 && errno == EAGAIN)                      // Lectura no bloqueante: esto no es un error, es que no hay nada que leer
       return 0;
     return rt;
@@ -120,7 +120,7 @@ ssize_t Serial::Read(void* buf, size_t size, uint32_t t_out)
     } while (err < 0 && errno == EINTR);                // Continuar a la espera si se recibe EINTR
     if (err <= 0)                                       // Salida con error o timeout
       break;
-    err = read(handle, &ptr[rt], size - rt);            // Se supone que esto leerá algo...
+    err = ::read(handle, &ptr[rt], size - rt);          // Se supone que esto leerá algo...
     if (err < 0)                                        // Error de lectura
       break;
     rt += err;
@@ -131,28 +131,28 @@ ssize_t Serial::Read(void* buf, size_t size, uint32_t t_out)
 /**
  * @brief     Escritura al puerto serie
  */
-ssize_t Serial::Write(const void* buf, size_t size)
+ssize_t Serial::write(const void* buf, size_t size)
 {
-  if (!IsOpen() || buf == nullptr)
+  if (!isOpen() || buf == nullptr)
     return -1;
-  ssize_t bytes = write(handle, buf, size);
+  ssize_t bytes = ::write(handle, buf, size);
   return (bytes >= 0)? bytes : -1;
 }
 
 /**
  * @brief     Escritura al puerto serie de un sólo byte
  */
-bool Serial::WriteByte(uint8_t byte)
+bool Serial::writeByte(uint8_t byte)
 {
-  if (!IsOpen())
+  if (!isOpen())
     return false;
-  return (write(handle, &byte, 1) == 1);
+  return (::write(handle, &byte, 1) == 1);
 }
 
 /**
  * @brief     Comprueba si hay datos pendientes de enviar
  */
-int Serial::PendingWrite()
+int Serial::pendingWrite()
 {
   int pending, lsr;
   if (ioctl(handle, TIOCSERGETLSR, &lsr) < 0)           // lectura de line status register
@@ -167,7 +167,7 @@ int Serial::PendingWrite()
 /**
  * @brief     Comprueba si hay datos pendientes de leer
  */
-int Serial::PendingRead()
+int Serial::pendingRead()
 {
   int pending;
   if (ioctl(handle, TIOCINQ, &pending) < 0)
@@ -178,10 +178,10 @@ int Serial::PendingRead()
 /**
  * @brief     Espera hasta que se hayan enviado todos los datos
  */
-bool Serial::WaitSend()
+bool Serial::waitSend()
 {
   while (true)
-    switch (PendingWrite())
+    switch (pendingWrite())
     {
       case PENDING_ERROR:
         return false;
@@ -195,9 +195,9 @@ bool Serial::WaitSend()
 /**
  * @brief     Vaciar el buffer de entrada, de salida, o ambos
  */
-void Serial::ClearBuffer(EnClearOper operation)
+void Serial::clearBuffer(EnClearOper operation)
 {
-  if (IsOpen())
+  if (isOpen())
   {
     switch (operation)
     {
@@ -217,9 +217,9 @@ void Serial::ClearBuffer(EnClearOper operation)
 /**
  * @brief     Establecer el estado de las líneas del puerto serie
  */
-bool Serial::SetLine(SerialLine line, bool mode)
+bool Serial::setLine(SerialLine line, bool mode)
 {
-  if (!IsOpen())
+  if (!isOpen())
     return false;
   unsigned flags;
   if (ioctl(handle, TIOCMGET, &flags) < 0)
@@ -235,9 +235,9 @@ bool Serial::SetLine(SerialLine line, bool mode)
 /**
  * @brief   Recuperar el estado de las líneas del puerto serie
  */
-int Serial::GetLine(SerialLine line)
+int Serial::getLine(SerialLine line)
 {
-  if (!IsOpen())
+  if (!isOpen())
     return -1;
   unsigned flags;
   if (ioctl(handle, TIOCMGET, &flags) < 0)
@@ -249,9 +249,9 @@ int Serial::GetLine(SerialLine line)
 /**
  * @brief   Establecer el modo de lectura (bloqueante o no bloqueante)
  */
-bool Serial::SetBlocking (EnLockingMode mode)
+bool Serial::setBlocking (EnLockingMode mode)
 {
-  if (!IsOpen())
+  if (!isOpen())
     return false;
   int flags = fcntl(handle, F_GETFL, 0);
   if (flags == -1)
@@ -270,7 +270,7 @@ bool Serial::SetBlocking (EnLockingMode mode)
 /**
  * @brief     Conversión del parámetro de velocidad del puerto de entero a constante válida para Init.
  */
-tcflag_t Serial::GetBaudCode(uint32_t baudrate)
+tcflag_t Serial::getBaudCode(uint32_t baudrate)
 {
   static const Uint2Tcflag uint2tcflag[] =              //!< Tabla de equivalencias de flags y valores de bps
   {
