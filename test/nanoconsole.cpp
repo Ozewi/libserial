@@ -15,14 +15,12 @@
 
 #include "libserial.h"
 #include <poll.h>
-#include <libUtility/tracelog.h>
-#include <libUtility/versioninfo.h>
 #include <iostream>
 #include <thread>
 #include <stdio.h>
 #include <unistd.h>
 
-MainVersion(nanoconsole, 2.0)                           //!< Nombre y versión del programa
+static constexpr char program_name[] = "nanoconsole v2.0";
 
 /**--------------------------------------------------------------------------------------------------
  * @brief       Constantes de configuración
@@ -36,13 +34,13 @@ uint32_t    DEFAULT_SERIAL_BPS = 9600;                  //!< Velocidad de conexi
 void PortReader(Serial& port)
 {
     char byte;
-    for (bool loop = true; loop; )
+    while (true)
     {
         switch (port.pendingRead())
         {
             case Serial::PENDING_ERROR:
-                Logger(Log::Error) << "Error leyendo del puerto serie. Terminando." << Log::end;
-                loop = false;
+                std::cerr << "Error leyendo del puerto serie. Terminando." << std::endl;
+                exit(-1);
                 break;
 
             case Serial::PENDING_EMPTY:
@@ -69,8 +67,8 @@ void PortWriter(Serial* port, bool local_echo)
         auto rc = poll(&poll_entry, 1, 1000);
         if (rc < 0)
         {
-            Logger(Log::Error) << "Error leyendo de consola -- errno: " << errno << ". Terminando." << Log::end;
-            break;
+            std::cerr << "Error leyendo de la consola -- errno: " << errno << ". Terminando." << std::endl;
+            exit(-1);
         }
         if (rc > 0)
         {
@@ -86,6 +84,14 @@ void PortWriter(Serial* port, bool local_echo)
             }
         }
     }
+}
+
+/**
+ * @brief   Banner
+ */
+void Banner()
+{
+    std::cout << program_name << " - running libserial v" << libserial::version() << std::endl;
 }
 
 /**--------------------------------------------------------------------------------------------------
@@ -110,8 +116,7 @@ void Abort(const char* prog)
  * ------*/
 int main(int argc, char* argv[])
 {
-    VersionInfo::Show();
-    std::cout << "Using libserial v." << libserial::version() << std::endl;
+    Banner();
 
     /*--- Procesamiento de línea de comandos ---*/
     const char* serial_dev = DEFAULT_SERIAL_DEV;
@@ -144,21 +149,28 @@ int main(int argc, char* argv[])
                     break;
 
                 default:                                // wrong
-                    Logger(Log::Error) << "Parámetro incorrecto: '" << argv[param] << "'" << Log::end;
+                    std::cerr << "Error abriendo / configurando el puerto serie" << std::endl;
+                    exit(-1);
                     break;
-        }
+            }
         }
         else
-            Logger(Log::Error) << "Parámetro incorrecto: '" << argv[param] << "'" << Log::end;
+        {
+            std::cerr << "Error abriendo / configurando el puerto serie" << std::endl;
+            exit(-1);
+        }
     }
-    std::cout << "Parámetros: device='" << serial_dev << "'  speed=" << serial_bps << std::endl;
+    std::cout << "Parámetros: device='" << serial_dev << "' speed=" << serial_bps << std::endl;
 
     /*--- Apertura del puerto serie ---*/
     Serial port;
     if (port.open(serial_dev, serial_bps) == false)
-        Logger(Log::Error) << "Error abriendo / configurando el puerto serie" << Log::end;
+    {
+        std::cerr << "Error abriendo / configurando el puerto serie" << std::endl;
+        exit(-1);
+    }
 
-
+    /*--- Iniciar lectura del puerto y thread de lectura de consola ---*/
     std::thread writer(PortWriter, &port, local_echo);
     PortReader(port);
 }

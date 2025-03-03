@@ -14,16 +14,15 @@
  */
 
 #include "libserial.h"
-#include <libUtility/tracelog.h>
-#include <libUtility/versioninfo.h>
-#include <libUtility/timer.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <iostream>
 #include <vector>
+#include <chrono>               // std::chrono
+#include <thread>               // std::this_thread::sleep_for
 
-MainVersion(test_libserial, 2.0)                        //!< Nombre y versión del programa
+static constexpr char program_name[] = "test_libserial v2.0";
 
 /**--------------------------------------------------------------------------------------------------
  * @brief       Constantes de configuración
@@ -33,23 +32,45 @@ uint32_t    DEFAULT_SERIAL_BPS = 9600;                  //!< Velocidad de conexi
 uint32_t    DEFAULT_SERIAL_TIMEOUT = 1000;              //!< Tiempo de espera máximo por omisión
 uint32_t    MAX_MESSAGE_LEN = 512;                      //!< Longitud máxima del mensaje en bytes
 
+using namespace std::literals;
+
+class Timer
+{
+public:
+  Timer() : expire_() {};
+  void setAlarm(const std::chrono::milliseconds& lapse)
+  {
+    expire_ = std::chrono::system_clock::now() + lapse;
+  };
+  bool isExpired()
+  {
+    return (std::chrono::system_clock::now() > expire_);
+  };
+  std::chrono::milliseconds getRemain()
+  {
+    return std::chrono::duration_cast<std::chrono::milliseconds>(expire_ - std::chrono::system_clock::now());
+  }
+private:
+  std::chrono::time_point<std::chrono::system_clock> expire_;
+};
+
+
 /**--------------------------------------------------------------------------------------------------
  * @brief       Leer datos del puerto serie
  * ------*/
 void ReadData(Serial& port, uint32_t timeout)
 {
-  Timer timer;
-  uint64_t start_time = timer.GetTimeNow();
   uint32_t received = 0;
   std::cout << "Reading..." << std::endl;
-  for (timer.SetAlarm(timeout); timer.IsExpired() == false; )
+  Timer timer;
+  for (timer.setAlarm(std::chrono::milliseconds(timeout)); timer.isExpired() == false; )
   {
     uint8_t byte;
-    if (port.read(&byte, 1, timer.GetRemain()) == false)
+    if (port.read(&byte, 1, timer.getRemain().count()) == false)
       break;
-    printf("%09ld %3d  %02X\n", timer.GetTimeNow() - start_time, ++received, byte);
+    printf("Lapso: %09ld ms - Recibidos: %3d bytes - Valor: %02X '%c'\n", timeout - timer.getRemain().count(), ++received, byte, (byte >= 32)? byte : '.');
   }
-  printf("%09ld Terminado - %d bytes recibidos.\n", timer.GetTimeNow() - start_time, received);
+  std::cout << "--- Lapso total: " << (timeout - timer.getRemain().count()) << " ms - " << received << " bytes recibidos.\n";
 }
 
 /**--------------------------------------------------------------------------------------------------
@@ -57,19 +78,17 @@ void ReadData(Serial& port, uint32_t timeout)
  * ------*/
 void ListenData(Serial& port, uint32_t timeout)
 {
-  Timer timer;
-  uint64_t start_time = timer.GetTimeNow();
   uint32_t received = 0;
   std::cout << "Listening..." << std::endl;
+  Timer timer;
+  timer.setAlarm(0ms);
   while (1)
   {
     uint8_t byte;
     if (port.read(&byte, 1, timeout) == true)
-      printf("%09ld %3d  %02X\n", timer.GetTimeNow() - start_time, ++received, byte);
-    else if (received > 0)
-      break;
+      printf("Lapso: %09ld ms - Recibidos: %3d bytes - Valor: %02X '%c'\n", -timer.getRemain().count(), ++received, byte, (byte >= 32)? byte : '.');
   }
-  printf("%09ld Terminado - %d bytes recibidos.\n", timer.GetTimeNow() - start_time, received);
+  std::cout << "--- Lapso total: " << -timer.getRemain().count() << " ms - " << received << " bytes recibidos.\n";
 }
 
 /**--------------------------------------------------------------------------------------------------
@@ -199,6 +218,14 @@ void Console(Serial& port)
   }
 }
 
+/**
+ * @brief   Banner
+ */
+void Banner()
+{
+    std::cout << program_name << " - running libserial v" << libserial::version() << std::endl;
+}
+
 /**--------------------------------------------------------------------------------------------------
  * @brief       Salida con mensaje de sintaxis
  * ------ */
@@ -224,8 +251,7 @@ void Abort(const char* prog)
  * ------*/
 int main(int argc, char* argv[])
 {
-  VersionInfo::Show();
-  std::cout << "Using libserial v." << libserial::version() << std::endl;
+  Banner();
 
   /*--- Procesamiento de línea de comandos ---*/
   const char* serial_dev = DEFAULT_SERIAL_DEV;
@@ -261,19 +287,26 @@ int main(int argc, char* argv[])
 
         case 'i':
           if (bytes.size() > 0)
-            Logger(Log::Error) << "Especifique modo interactivo o mensaje en línea, no ambos." << Log::end;
+          {
+            std::cerr << "Especifique modo interactivo o mensaje en línea, no ambos." << std::endl;
+            exit(-1);
+          }
           interactive = true;
           break;
 
         default:                                        // wrong
-          Logger(Log::Error) << "Parámetro incorrecto: '" << argv[param] << "'" << Log::end;
+          std::cerr << "Parámetro incorrecto: '" << argv[param] << "'" << std::endl;
+          exit(-1);
           break;
       }
     }
     else
     {
       if (interactive)
-        Logger(Log::Error) << "Especifique modo interactivo o mensaje en línea, no ambos." << Log::end;
+      {
+        std::cerr << "Especifique modo interactivo o mensaje en línea, no ambos." << std::endl;
+        exit(-1);
+      }
       bytes.push_back(argv[param]);
     }
   }
@@ -289,7 +322,10 @@ int main(int argc, char* argv[])
   /*--- Apertura del puerto serie ---*/
   Serial port;
   if (port.open(serial_dev, serial_bps) == false)
-    Logger(Log::Error) << "Error abriendo / configurando el puerto serie" << Log::end;
+  {
+    std::cerr << "Error abriendo / configurando el puerto serie" << std::endl;
+    exit(-1);
+  }
 
   /*--- Enviar y recibir mensaje ---*/
   if (interactive)
