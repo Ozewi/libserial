@@ -4,14 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
-## [2.0] - 2025.03.03
+## [2.0] - 2025.03.04
 
 ### Added
 - nanoconsole: Programa de test que funciona como una consola cutre.
 
 ### Changed
+- Clase cambiada para soportar el concepto RAII:
+  - El puerto se abre en el constructor y se cierra en el destructor.
+  - Eliminadas las funciones open() y close().
+  - Tratamiento de errores mediante excepciones.
 - Los nombres de los métodos ahora siguen el patrón camelCase.
-- Tests cambiados para usar los nuevos nombres.
+- Tests cambiados para usar los nuevos nombres y excepciones.
+- Indentación a 4 espacios.
 
 ## [1.8] - 2025.02.28
 

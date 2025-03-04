@@ -6,7 +6,7 @@
  * @brief     Información de versión de la biblioteca
  * @author    José Luis Sánchez Arroyo
  * @date      2025.02.25
- * @version   1.8
+ * @version   2.0
  *
  * Copyright (c) 2005-2025 José Luis Sánchez Arroyo
  * This software is distributed under the terms of the LGPL version 2 and comes WITHOUT ANY WARRANTY.

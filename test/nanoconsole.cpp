@@ -5,7 +5,7 @@
  * @file      nanoconsole.cpp
  * @brief     Miniconsola de puerto serie
  * @author    José Luis Sánchez Arroyo
- * @date      2025.03.03
+ * @date      2025.03.04
  * @version   2.0
  *
  * Copyright (c) 2005-2025 José Luis Sánchez Arroyo
@@ -149,28 +149,30 @@ int main(int argc, char* argv[])
                     break;
 
                 default:                                // wrong
-                    std::cerr << "Error abriendo / configurando el puerto serie" << std::endl;
+                    std::cerr << "Parámetro incorrecto: '" << argv[param] << "'" << std::endl;
                     exit(-1);
                     break;
             }
         }
         else
         {
-            std::cerr << "Error abriendo / configurando el puerto serie" << std::endl;
+            std::cerr << "Parámetro incorrecto: '" << argv[param] << "'" << std::endl;
             exit(-1);
         }
     }
     std::cout << "Parámetros: device='" << serial_dev << "' speed=" << serial_bps << std::endl;
 
     /*--- Apertura del puerto serie ---*/
-    Serial port;
-    if (port.open(serial_dev, serial_bps) == false)
+    try
     {
-        std::cerr << "Error abriendo / configurando el puerto serie" << std::endl;
-        exit(-1);
-    }
+        Serial port(serial_dev, serial_bps);
 
-    /*--- Iniciar lectura del puerto y thread de lectura de consola ---*/
-    std::thread writer(PortWriter, &port, local_echo);
-    PortReader(port);
+        /*--- Iniciar lectura del puerto y thread de lectura de consola ---*/
+        std::thread writer(PortWriter, &port, local_echo);
+        PortReader(port);
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << "Error inicializando el puerto serie. " << e.what() << std::endl;
+    }
 }
