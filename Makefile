@@ -1,6 +1,6 @@
 #
 # Makefile de la librería libserial
-# Última modificación: 2025.03.04
+# Última modificación: 2025.03.05
 #
 
 MODULE = libserial
@@ -9,9 +9,9 @@ H_INSTALL_FILES = libserial.h
 
 libserial_dep = libserial.o version.o
 
-TESTS = test_libserial nanoconsole
+TESTS = test_libserial nanoterm
 test_libserial_dep = test_libserial.o serial
-nanoconsole_dep = nanoconsole.o serial
+nanoterm_dep = nanoterm.o serial
 
 CPPFLAGS := $(CPPFLAGS) -fPIC
 
