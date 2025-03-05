@@ -2,11 +2,11 @@
  * libserial
  * Manejo de comunicaciones por puerto serie
  *
- * @file      nanoconsole.cpp
- * @brief     Miniconsola de puerto serie
+ * @file      nanoterm.cpp
+ * @brief     Miniterminal de puerto serie
  * @author    José Luis Sánchez Arroyo
- * @date      2025.03.04
- * @version   2.0
+ * @date      2025.03.05
+ * @version   2.1
  *
  * Copyright (c) 2005-2025 José Luis Sánchez Arroyo
  * This software is distributed under the terms of the LGPL version 2 and comes WITHOUT ANY WARRANTY.
@@ -20,7 +20,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
-static constexpr char program_name[] = "nanoconsole v2.0";
+static constexpr char program_name[] = "nanoterm v2.1";
 
 /**--------------------------------------------------------------------------------------------------
  * @brief       Constantes de configuración

@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
+## [2.1] - 2025.03.05
+
+### Changed
+- Cambiado el tipo del parámetro de constructor devname de const char* a const std::string&
+- Uso de steady_clock en lugar de system_clock.
+- write() ahora despacha una excepción si hay un error de escritura (salvo escritura no bloqueante).
+- nanoconsole renombrado a nanoterm.
+
+### Fixed
+- Ahora se hace cleanup en el constructor antes de lanzar una excepción.
+- Faltaba el texto de una excepción.
+
 ## [2.0] - 2025.03.04
 
 ### Added

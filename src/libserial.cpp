@@ -5,8 +5,8 @@
  * @file      libserial.cpp
  * @brief     Clase de manejo del puerto serie
  * @author    José Luis Sánchez Arroyo
- * @date      2025.03.04
- * @version   2.0
+ * @date      2025.03.05
+ * @version   2.1
  *
  * Copyright (c) 2005-2025 José Luis Sánchez Arroyo
  * This software is distributed under the terms of the LGPL version 2 and comes WITHOUT ANY WARRANTY.
@@ -14,14 +14,14 @@
  */
 
 #include "libserial.h"
-#include <fcntl.h>
-#include <sys/poll.h>
-#include <errno.h>
-#include <string.h>             // strerror
-#include <ios>                  // std::ios_base::failure
-#include <chrono>               // std::chrono
-#include <thread>               // std::this_thread::sleep_for
-#include <stdexcept>            // exceptions
+#include <unistd.h>                                     // close, read, write
+#include <sys/poll.h>                                   // poll
+#include <errno.h>                                      // errno
+#include <string.h>                                     // strerror
+#include <ios>                                          // std::ios_base::failure
+#include <chrono>                                       // std::chrono
+#include <thread>                                       // std::this_thread::sleep_for
+#include <stdexcept>                                    // exceptions
 
 using namespace std::string_literals;
 
@@ -34,21 +34,22 @@ using namespace std::string_literals;
  * @desc    Abre el dispositivo y aplica la configuración solicitada, guardando la anterior.
  * @note    Explicación detallada de los parámetros en la descripción de los tipos enumerados.
  */
-Serial::Serial(const char* devname, uint32_t baudrate, EnBlockingMode blockmode, EnFlowControl flowcontrol, EnCharLen charlen, EnParity parity, EnStopBits stopbits)
+Serial::Serial(const std::string& devname, uint32_t baudrate, EnBlockingMode blockmode, EnFlowControl flowcontrol, EnCharLen charlen, EnParity parity, EnStopBits stopbits)
   : handle_(-1), prev_tio_()
 {
-    if (devname == nullptr)
-        throw std::invalid_argument("device name is null");
     auto baud_code = getBaudCode(baudrate);             // Obtener el código de baudrate correspondiente
     if (baud_code == 0)
-        throw std::invalid_argument("");
+        throw std::invalid_argument("Requested baudrate is too low"s);
 
-    handle_ = ::open(devname, O_RDWR | O_NOCTTY | blockmode);
+    handle_ = ::open(devname.c_str(), O_RDWR | O_NOCTTY | blockmode);
     if (handle_ < 0)                                    // Error de apertura
         throw std::ios_base::failure("Error in open: "s + std::string(strerror(errno)));
 
     if (tcgetattr(handle_, &prev_tio_) < 0)             // Guardar la anterior configuración del terminal
-        throw std::ios_base::failure("Error in tcgetattr: " + std::string(strerror(errno)));
+    {
+        ::close(handle_);
+        throw std::ios_base::failure("Error in tcgetattr: "s + strerror(errno));
+    }
 
     termios tio = {};                                   // Establecer nuevos parámetros del puerto
     tio.c_iflag = (flowcontrol & (IXON | IXOFF)) | IGNPAR | (parity)? INPCK : 0;
@@ -60,7 +61,11 @@ Serial::Serial(const char* devname, uint32_t baudrate, EnBlockingMode blockmode,
     cfsetospeed(&tio, baud_code);
     cfsetispeed(&tio, baud_code);
     if (tcflush(handle_, TCIFLUSH) < 0 || tcsetattr(handle_, TCSANOW, &tio) < 0)
-        throw std::ios_base::failure("Error in tcflush / tcsetattr: " + std::string(strerror(errno)));
+    {
+        tcsetattr(handle_, TCSANOW, &prev_tio_);
+        ::close(handle_);
+        throw std::ios_base::failure("Error in tcflush / tcsetattr: "s + strerror(errno));
+    }
 }
 
 /**
@@ -79,7 +84,7 @@ Serial::~Serial()
 ssize_t Serial::read(void* buf, std::size_t size, uint32_t t_out)
 {
     if (buf == nullptr)
-        throw std::invalid_argument("read: null pointer");
+        throw std::invalid_argument("read: null pointer"s);
 
     ssize_t rt = 0;
     if (t_out == NO_TIMEOUT)                            // Lectura sin timeout - si Blocking, espera indefinidamente; si NonBlocking, sale al momento.
@@ -94,13 +99,13 @@ ssize_t Serial::read(void* buf, std::size_t size, uint32_t t_out)
     p_list.fd = handle_;
     p_list.events = POLLIN;
     int err;
-    auto end_time = std::chrono::system_clock::now() + std::chrono::milliseconds(t_out);
+    auto end_time = std::chrono::steady_clock::now() + std::chrono::milliseconds(t_out);
     uint8_t* ptr = reinterpret_cast<uint8_t*>(buf);     // Necesario para poder hacer aritmética de punteros
     for (rt = 0; rt < static_cast<ssize_t>(size); )
     {
         do
         {
-            auto remain = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - std::chrono::system_clock::now()).count();
+            auto remain = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - std::chrono::steady_clock::now()).count();
             err = (remain > 0)? poll(&p_list, 1, remain) : 0; // Si quedan 0 o menos milisegundos, salir con err = 0 (timeout)
         } while (err < 0 && errno == EINTR);            // Continuar a la espera si se recibe EINTR
         if (err <= 0)                                   // Salida con error o timeout
@@ -119,9 +124,15 @@ ssize_t Serial::read(void* buf, std::size_t size, uint32_t t_out)
 ssize_t Serial::write(const void* buf, std::size_t size)
 {
     if (buf == nullptr)
-        throw std::invalid_argument("write: null pointer");
+        throw std::invalid_argument("write: null pointer"s);
     ssize_t bytes = ::write(handle_, buf, size);
-    return (bytes >= 0)? bytes : -1;
+    if (bytes < 0                                       // Error de escritura
+        && errno != EAGAIN                              // Un error por motivo válido no debe provocar una excepción
+        && errno != EWOULDBLOCK
+        && errno != EINTR)
+        throw std::ios_base::failure("write: unexpected error writing - "s + strerror(errno));
+
+    return bytes;
 }
 
 /**

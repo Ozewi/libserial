@@ -5,8 +5,8 @@
  * @file      libserial.h
  * @brief     Clase de manejo del puerto serie
  * @author    José Luis Sánchez Arroyo
- * @date      2025.03.04
- * @version   2.0
+ * @date      2025.03.05
+ * @version   2.1
  *
  * Copyright (c) 2005-2025 José Luis Sánchez Arroyo
  * This software is distributed under the terms of the LGPL version 2 and comes WITHOUT ANY WARRANTY.
@@ -18,10 +18,10 @@
 
 #include <termios.h>
 #include <stdint.h>
-#include <unistd.h>                                     // ssize_t
+#include <sys/types.h>                                  // size_t, ssize_t
 #include <sys/ioctl.h>                                  // Constantes indicativas de las líneas serial
 #include <fcntl.h>                                      // O_NDELAY
-#include <utility>
+#include <string>                                       // std::string
 
 namespace libserial {
 
@@ -115,7 +115,7 @@ public:
     /** @brief  Valores específicos de timeout (Read) */
     enum
     {
-        NO_TIMEOUT = 0                                    //!< Lectura sin timeout (@see Read)
+        NO_TIMEOUT = 0                                    //!< Lectura sin timeout (@see read)
     };
 
     /**-------------------------------------------------------------------------------------------------
@@ -128,13 +128,13 @@ public:
      * @note    Explicación detallada de los parámetros en la descripción de los tipos enumerados.
      */
     Serial (
-        const char* devname,                            /** @param devname     Path al dispositivo serie */
+        const std::string& devname,                     /** @param devname     Path al dispositivo serie */
         uint32_t baudrate,                              /** @param baudrate    Velocidad (bits por segundo) a establecer */
         EnBlockingMode blockmode = NonBlocking,         /** @param blockmode   Modo de bloqueo en lectura (bloqueante o no bloqueante) */
         EnFlowControl flowcontrol = NoFlowCtrl,         /** @param flowcontrol Tipo de control de flujo [ = sin control de flujo ] */
         EnCharLen charlen = c8bits,                     /** @param charlen     Tamaño del carácter [ = 8  bits ] */
         EnParity parity = NoParity,                     /** @param parity      Control de paridad del carácter [ sin control de paridad ] */
-        EnStopBits stopbits = stop1bit                  /** @param stopbits    Bits de stop (0: 1 stop bit, CSTOP: 2 stop bits) [ = 0 ] */
+        EnStopBits stopbits = stop1bit                  /** @param stopbits    Bits de stop [ = 1 bit de stop ] */
     );
 
     /**

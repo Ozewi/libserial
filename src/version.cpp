@@ -5,8 +5,8 @@
  * @file      version.cpp
  * @brief     Información de versión de la biblioteca
  * @author    José Luis Sánchez Arroyo
- * @date      2025.02.25
- * @version   2.0
+ * @date      2025.03.05
+ * @version   2.1
  *
  * Copyright (c) 2005-2025 José Luis Sánchez Arroyo
  * This software is distributed under the terms of the LGPL version 2 and comes WITHOUT ANY WARRANTY.
@@ -15,7 +15,7 @@
 
 namespace libserial {
 
-constexpr char LIBRARY_VERSION[] = "2.0";
+constexpr char LIBRARY_VERSION[] = "2.1";
 
 /**
  * @brief   Identificador de la versión de la biblioteca
