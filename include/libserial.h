@@ -1,12 +1,10 @@
 /**
- * libserial
- * Manejo de comunicaciones por puerto serie
- *
+ * @package   libserial
  * @file      libserial.h
  * @brief     Clase de manejo del puerto serie
  * @author    José Luis Sánchez Arroyo
- * @date      2025.03.05
- * @version   2.1
+ * @date      2025.03.08
+ * @version   2.2
  *
  * Copyright (c) 2005-2025 José Luis Sánchez Arroyo
  * This software is distributed under the terms of the LGPL version 2 and comes WITHOUT ANY WARRANTY.
@@ -138,6 +136,19 @@ public:
     );
 
     /**
+     * @brief   Copy constructor: borrado
+     */
+    Serial(Serial&) = delete;
+
+    /**
+     * @brief   Move constructor.
+     * @desc    Mueve los datos del objeto proporcionado al actual.
+     */
+    Serial (
+        Serial&& other                                  /** @param other Objeto que se mueve */
+    );
+
+    /**
      * @brief   Destructor de la clase.
      * @desc    Cierra el puerto y lo devuelve a su configuración anterior.
      */
@@ -229,15 +240,6 @@ protected:
     /**-------------------------------------------------------------------------------------------------
      * @brief   Estructuras, datos y funciones privados
      * ------ */
-
-    /**
-     * @brief   Estructura para asociar valores de baudrate con flags del sistema
-     */
-    struct Uint2Tcflag
-    {
-        uint32_t baud;                                  // Baudrate
-        tcflag_t flag;                                  // Flag del sistema
-    };
 
     /**
      * @brief   Conversión del parámetro de velocidad del puerto de entero a constante para termios

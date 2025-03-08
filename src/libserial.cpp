@@ -1,12 +1,10 @@
 /**
- * libserial
- * Manejo de comunicaciones por puerto serie
- *
+ * @package   libserial
  * @file      libserial.cpp
  * @brief     Clase de manejo del puerto serie
  * @author    José Luis Sánchez Arroyo
- * @date      2025.03.05
- * @version   2.1
+ * @date      2025.03.08
+ * @version   2.2
  *
  * Copyright (c) 2005-2025 José Luis Sánchez Arroyo
  * This software is distributed under the terms of the LGPL version 2 and comes WITHOUT ANY WARRANTY.
@@ -23,7 +21,20 @@
 #include <thread>                                       // std::this_thread::sleep_for
 #include <stdexcept>                                    // exceptions
 
+constexpr char LIBRARY_VERSION[] = "2.2";               // Versión de la librería
+
 using namespace std::string_literals;
+
+
+/**
+ * @brief   Identificador de la versión de la biblioteca
+ */
+namespace libserial {
+const char* version()
+{
+    return LIBRARY_VERSION;
+}
+} // namespace
 
 /**-------------------------------------------------------------------------------------------------
  * @brief   Clase Serial: Manejo del puerto serie
@@ -69,13 +80,27 @@ Serial::Serial(const std::string& devname, uint32_t baudrate, EnBlockingMode blo
 }
 
 /**
+ * @brief   Move constructor.
+ * @desc    Mueve los datos del objeto proporcionado al actual.
+ */
+Serial::Serial(Serial&& other)
+{
+    handle_ = other.handle_;
+    prev_tio_ = other.prev_tio_;
+    other.handle_ = -1;                                 // Invalidar el otro handle
+}
+
+/**
  * @brief   Destructor de la clase.
  * @desc    Cierra el puerto y lo devuelve a su configuración anterior.
  */
 Serial::~Serial()
 {
-    tcsetattr(handle_, TCSANOW, &prev_tio_);
-    ::close(handle_);
+    if (handle_ > 0)
+    {
+        tcsetattr(handle_, TCSANOW, &prev_tio_);
+        ::close(handle_);
+    }
 }
 
 /**
@@ -257,6 +282,12 @@ bool Serial::setBlocking (EnBlockingMode mode)
  */
 tcflag_t Serial::getBaudCode(uint32_t baudrate)
 {
+    struct Uint2Tcflag
+    {
+        uint32_t baud;                                  // Baudrate
+        tcflag_t flag;                                  // Flag del sistema
+    };
+
     static const Uint2Tcflag uint2tcflag[] =            //!< Tabla de equivalencias de flags y valores de bps
     {
         { 4000000, B4000000 },

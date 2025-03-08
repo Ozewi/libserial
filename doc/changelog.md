@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
+## [2.2] - 2025.03.08
+
+### Added
+- Move constructor.
+- Copy constructor (deleted).
+
+### Changed
+- La estructura usada en getBaudCode ahora es privada de la función y no de la clase.
+
 ## [2.1] - 2025.03.05
 
 ### Changed
