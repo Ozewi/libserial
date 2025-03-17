@@ -1,53 +1,51 @@
 /**
  * @package   libserial
- * @file      libserial.h
  * @brief     Clase de manejo del puerto serie
  * @author    José Luis Sánchez Arroyo
- * @date      2025.03.08
- * @version   2.2
- *
+ * @section   License
  * Copyright (c) 2005-2025 José Luis Sánchez Arroyo
- * This software is distributed under the terms of the LGPL version 2 and comes WITHOUT ANY WARRANTY.
- * Please read the file COPYING.LIB for further details.
+ * This software is distributed under the terms of the LGPL version 2.1 and comes WITHOUT ANY WARRANTY.
+ * Please read the file LICENSE for further details.
  */
 
 #ifndef __LIBSERIAL_H__
 #define __LIBSERIAL_H__
 
 #include <termios.h>
+#include <unistd.h>
 #include <stdint.h>
 #include <sys/types.h>                                  // size_t, ssize_t
-#include <sys/ioctl.h>                                  // Constantes indicativas de las líneas serial
+#include <sys/ioctl.h>                                  // TIOCM_LE and other serial line constants
 #include <fcntl.h>                                      // O_NDELAY
 #include <string>                                       // std::string
 
 namespace libserial {
 
 /**
- * @brief   Identificador de la versión de la biblioteca
+ * @brief   Function to get the library version at runtime.
  */
 const char* version();
 
 }
 
-/**-------------------------------------------------------------------------------------------------
- * @brief   Clase Serial: Manejo del puerto serie
+/** ----------------------------------------------------
+ * @brief   Class Serial: Serial port management.
  * ------ */
 class Serial
 {
 public:
-    /**-------------------------------------------------------------------------------------------------
-     * @brief   Tipos enumerados públicos, utilizados por las funciones de la clase
+    /** ----------------------------------------------------
+     * @brief   Public enumerated types, used by some functions of the class
      * ------ */
 
-    /** @brief  Enumeración de la modalidad de lectura (bloqueante o no bloqueante) (Open, SetBlocking) */
+    /** @brief  Read modes. Used by: constructor, setBlocking */
     enum EnBlockingMode
     {
-        Blocking          = 0,                            //!< Las lecturas son bloqueantes (esperan a que haya caracteres que leer)
-        NonBlocking       = O_NDELAY                      //!< Las lecturas no son bloqueantes (salen con error si no hay nada que leer)
+        Blocking          = 0,                            //!< Blocking read (function 'read' will wait till there's something to read)
+        NonBlocking       = O_NDELAY                      //!< Non-blocking read (function 'read' terminates with error if there's nothing to read)
     };
 
-    /** @brief  Enumeración de los tipos de control de flujo (Open) */
+    /** @brief  Flow control modes. Used by: constructor. */
     enum EnFlowControl
     {
         NoFlowCtrl        = 0,
@@ -57,7 +55,7 @@ public:
         XonXoffBoth       = (IXON | IXOFF)
     };
 
-    /** @brief  Enumeración de los tamaños de carácter (Open) */
+    /** @brief  Char sizes enum. Used by: constructor. */
     enum EnCharLen
     {
         c5bits            = CS5,
@@ -66,37 +64,30 @@ public:
         c8bits            = CS8
     };
 
-    /** @brief  Enumeración de los tipos de paridad (Open) */
+    /** @brief  Parity types. Used by: constructor. */
     enum EnParity
     {
-        NoParity          = 0,
-        EvenParity        = PARENB,
-        OddParity         = PARODD
+        NoParity          = 0,                          //!< No parity.
+        EvenParity        = PARENB,                     //!< Even parity.
+        OddParity         = PARODD                      //!< Odd parity.
     };
 
-    /** @brief  Enumeración de los bits de stop (Open) */
+    /** @brief  Stop bits count. Used by: constructor. */
     enum EnStopBits
     {
-        stop1bit          = 0,
-        stop2bits         = CSTOP
+        stop1bit          = 0,                          //!< 1 stop bit
+        stop2bits         = CSTOP                       //!< 2 stop bits
     };
 
-    /** @brief  Estados del buffer (PendingRead, PendingWrite) */
-    enum EnPending : int
-    {
-        PENDING_ERROR = -1,                               //!< Error: no se ha podido averiguar el estado
-        PENDING_EMPTY = 0,                                //!< No hay datos pendientes de transmitir (buffer vacío)
-    };
-
-    /** @brief  Tipos de operación de vaciado de buffer (ClearBuffer) */
+    /** @brief  Clear buffer operation type. Used by: clearBuffer. */
     enum EnClearOper
     {
-        CLEAR_BUF_IN = 1,                                 //!< Vaciar el buffer de entrada (descartar datos pendientes)
-        CLEAR_BUF_OUT,                                    //!< Vaciar el buffer de salida descartando datos pendientes
-        FLUSH_BUF_OUT                                     //!< Esperar a que se terminen de enviar los datos pendientes
+        CLEAR_BUF_IN = 1,                                 //!< Clear input buffer, discarding pending data.
+        CLEAR_BUF_OUT,                                    //!< Clear output buffer, discarding pending data.
+        FLUSH_BUF_OUT                                     //!< Flush output buffer, waiting till it is empty.
     };
 
-    /** @brief  Enumeración de las líneas del puerto serie (SetLine, GetLine) */
+    /** @brief  Serial port lines. Used by: getLine, setLine. */
     enum SerialLine
     {
         LINE_LE   = TIOCM_LE,                             //!<
@@ -110,147 +101,163 @@ public:
         LINE_DSR  = TIOCM_DSR                             //!< DSR (Data Send Ready)
     };
 
-    /** @brief  Valores específicos de timeout (Read) */
+    /** @brief  Timeout special values. Used by: read. */
     enum
     {
-        NO_TIMEOUT = 0                                    //!< Lectura sin timeout (@see read)
+        NO_TIMEOUT = 0                                    //!< Read with no timeout. @see read.
     };
 
-    /**-------------------------------------------------------------------------------------------------
-     * @brief   Funciones públicas
+    /** ----------------------------------------------------
+     * @brief   Public functions.
      * ------ */
 
     /**
-     * @brief   Constructor. Abre y configura el puerto serie.
-     * @desc    Abre el dispositivo y aplica la configuración solicitada, guardando la anterior.
-     * @note    Explicación detallada de los parámetros en la descripción de los tipos enumerados.
+     * @brief   Constructor. Open and configure the serial port.
+     * @desc    The serial port is open and the requested configuration is applied. Previous configuration is stored.
+     * @throw   invalid_argument if any of the arguments provided is not valid
+     * @throw   ios_base::failure on error while opening or configuring the serial port.
+     * @note    Serial ports only allow a discrete set of baudrates. If the provided baudrate is not in the list, it is rounded down
+     *          to the nearest value.
+     * @see     Enumerated types above.
      */
     Serial (
-        const std::string& devname,                     /** @param devname     Path al dispositivo serie */
-        uint32_t baudrate,                              /** @param baudrate    Velocidad (bits por segundo) a establecer */
-        EnBlockingMode blockmode = NonBlocking,         /** @param blockmode   Modo de bloqueo en lectura (bloqueante o no bloqueante) */
-        EnFlowControl flowcontrol = NoFlowCtrl,         /** @param flowcontrol Tipo de control de flujo [ = sin control de flujo ] */
-        EnCharLen charlen = c8bits,                     /** @param charlen     Tamaño del carácter [ = 8  bits ] */
-        EnParity parity = NoParity,                     /** @param parity      Control de paridad del carácter [ sin control de paridad ] */
-        EnStopBits stopbits = stop1bit                  /** @param stopbits    Bits de stop [ = 1 bit de stop ] */
+        const std::string& devname,                     /** @param devname     Path to the serial device */
+        uint32_t baudrate,                              /** @param baudrate    Port speed, in bits per second */
+        EnBlockingMode blockmode = NonBlocking,         /** @param blockmode   Read mode (blocking or non-blocking) [ = non-blocking ]*/
+        EnFlowControl flowcontrol = NoFlowCtrl,         /** @param flowcontrol Flow control [ = no flow control ] */
+        EnCharLen charlen = c8bits,                     /** @param charlen     Character size [ = 8  bits ] */
+        EnParity parity = NoParity,                     /** @param parity      Parity control type [ = no parity ] */
+        EnStopBits stopbits = stop1bit                  /** @param stopbits    Stop bits [ = 1 stop bit ] */
     );
 
     /**
-     * @brief   Copy constructor: borrado
+     * @brief   Copy constructor (deleted)
      */
     Serial(Serial&) = delete;
 
     /**
      * @brief   Move constructor.
-     * @desc    Mueve los datos del objeto proporcionado al actual.
+     * @desc    Moves data from the provided object to this.
      */
     Serial (
-        Serial&& other                                  /** @param other Objeto que se mueve */
+        Serial&& other                                  /** @param other Object to be moved */
     );
 
     /**
-     * @brief   Destructor de la clase.
-     * @desc    Cierra el puerto y lo devuelve a su configuración anterior.
+     * @brief   Destructor.
+     * @desc    Restore previous configuration and close the port device.
      */
     ~Serial ();
 
     /**
-     * @brief   Lectura del puerto serie
-     * @desc    En modo Blocking, NO_TIMEOUT espera indefinidamente la llegada de un byte.
-     *          En modo NonBlocking, NO_TIMEOUT sale inmediatamente con retorno de 0 bytes si no hay datos que leer.
-     * @throws  invalid_argument si buf es nullptr.
+     * @brief   Read data from the serial port.
+     * @desc    Blocking mode affects the function behaviour when specifying NO_TIMEOUT:
+     *          On Blocking mode, the function waits forever till all requested bytes are received.
+     *          On NonBlocking mode, the function returns immediately when there's no data pending.
+     * @throws  invalid_argument if buf is nullptr.
+     * @throws  ios_base::failure on read error
      */
-    ssize_t                                             /** @return Bytes leidos */
+    ssize_t                                             /** @return Bytes received */
     read (
-        void* buf,                                      /** @param buf    Buffer en el que escribir lo leido */
-        std::size_t size,                               /** @param size   Bytes a leer */
-        uint32_t t_out                                  /** @param t_out  Timeout en ms, o NO_TIMEOUT. */
+        void* buf,                                      /** @param buf    Pointer to the buffer for the data received */
+        std::size_t size,                               /** @param size   Number of bytes to read */
+        uint32_t t_out                                  /** @param t_out  Timeout, in ms, or NO_TIMEOUT. */
     );
 
     /**
-     * @brief   Escritura al puerto serie
-     * @throws  invalid_argument si buf es nullptr.
+     * @brief   Write data to the serial port.
+     * @throws  invalid_argument if buf is nullptr.
+     * @throws  ios_base::failure if data can't be written.
      */
-    ssize_t                                             /** @return -1: error | Bytes escritos */
+    ssize_t                                             /** @return Number of bytes sent */
     write (
-        const void* buf,                                /** @param buf   Buffer con los datos a escribir */
-        std::size_t size                                /** @param size  Bytes a escribir */
+        const void* buf,                                /** @param buf   Pointer to the buffer to write */
+        std::size_t size                                /** @param size  Bytes to write */
     );
 
     /**
-     * @brief   Escritura al puerto serie de un sólo byte
+     * @brief   Write one byte to the serial port.
+     * @throws  invalid_argument if buf is nullptr.
+     * @throws  ios_base::failure if data can't be written.
      */
-    bool                                                /** @return true: escritura correcta | false: error */
+    void                                                /** @return void */
     writeByte (
         uint8_t byte                                    /** @param byte  Byte a escribir */
     );
 
     /**
-     * @brief   Comprueba si hay datos pendientes de enviar
+     * @brief   Check if there's any data in the output queue.
+     * @throws  ios_base::failure if the port status can't be read.
      */
-    int                                                 /** @return PENDING_ERROR: Error de lectura | PENDING_EMPTY: Cola de salida vacía | Bytes pendientes de enviar */
+    int                                                 /** @return 0: Output queue is empty | Bytes waiting to be sent */
     pendingWrite();
 
     /**
-     * @brief   Comprueba si hay datos pendientes de leer
+     * @brief   Check if there's any data in the input queue.
+     * @throws  ios_base::failure if the port status can't be read.
      */
-    int                                                 /** @return PENDING_ERROR: Error de lectura | PENDING_EMPTY: Cola de entrada vacía | Bytes pendientes de recibir */
+    int                                                 /** @return 0: Input queue is empty | Bytes pending to be read */
     pendingRead();
 
     /**
-     * @brief   Espera hasta que se hayan enviado todos los datos
+     * @brief   Wait till the output queue is empty.
+     * @throws  ios_base::failure if the port status can't be read.
      */
-    bool                                                /** @return true: Operación completada con éxito | false: error */
+    void                                                /** @return void */
     waitSend();
 
     /**
-     * @brief   Vaciar el buffer de entrada, de salida, o ambos
+     * @brief   Clear the input and/or the output queue.
      */
     void                                                /** @return void */
     clearBuffer (
-        EnClearOper operation                           /** @param operation  Tipo de operación a realizar: espera o borrado i/o */
+        EnClearOper operation                           /** @param operation  Operation to perform. @see EnClearOper */
     );
 
     /**
-     * @brief   Establecer el estado de las líneas del puerto serie
+     * @brief   Set serial port line status.
+     * @throws  ios_base::failure if the serial line status can't be read or written.
      */
-    bool                                                /** @return true: Comando completado con éxito | false: error */
+    void                                                /** @return void */
     setLine (
-        SerialLine line,                                /** @param line  Línea a controlar */
-        bool mode                                       /** @param mode  Valor a establecer (on/off) */
+        SerialLine line,                                /** @param line  Line to change */
+        bool mode                                       /** @param mode  Value to set (on/off) */
     );
 
     /**
-     * @brief   Recuperar el estado de las líneas del puerto serie
+     * @brief   Set serial port line status.
+     * @throws  ios_base::failure if the serial line status can't be read.
      */
-    int                                                 /** @return 1: línea activa | 0: línea inactiva | -1: error */
+    bool                                                /** @return true: Line is on | false: Line is off */
     getLine (
-        SerialLine line                                 /** @param line  Línea a controlar */
+        SerialLine line                                 /** @param line  Line to read */
     );
 
     /**
-     * @brief   Establecer el modo de lectura (bloqueante o no bloqueante)
+     * @brief   Set reading mode (blocking or non-blocking)
+     * @throws  ios_base::failure if the device control flags can't be read or written.
      */
-    bool                                                /** @return true: Comando completado con éxito | false: error */
+    void                                                /** @return void */
     setBlocking (
-        EnBlockingMode mode                             /** @param mode  Nuevo modo de lectura */
+        EnBlockingMode mode                             /** @param mode  New read blocking mode */
     );
 
 protected:
-    /**-------------------------------------------------------------------------------------------------
-     * @brief   Estructuras, datos y funciones privados
+    /** ----------------------------------------------------
+     * @brief   Protected struct, data and functions
      * ------ */
 
     /**
-     * @brief   Conversión del parámetro de velocidad del puerto de entero a constante para termios
+     * @brief   Convert the baudrate parameter from integer to termios constant.
+     * @desc    Value is rounded down to the nearest value.
      */
-    tcflag_t                                            /** @return Constante correspondiente o la inmediata inferior */
+    tcflag_t                                            /** @return termios constant for the requested baudrate */
     getBaudCode (
-        uint32_t baudrate                               /** @param baudrate  Valor de velocidad requerido */
+        uint32_t baudrate                               /** @param baudrate  Requested baudrate to convert */
     );
 
     int     handle_;                                    //!< File handler
-    termios prev_tio_;                                  //!< Configuración anterior del puerto, para restaurarla al cerrar
+    termios prev_tio_;                                  //!< Struct to contain the previous port configuration, to restore it on close.[H
 };
 
 #endif // __LIBSERIAL_H__

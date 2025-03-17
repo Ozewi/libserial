@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 
+## [2.3] - 2025.03.17
+
+### Changed
+- All functions now trigger exceptions when an unexpected error is received from the device handler.
+- Functions writeByte, waitSend, setLine and setBlocking now return void.
+- Function getLine now returns bool instead of int.
+
 ## [2.2] - 2025.03.08
 
 ### Added
