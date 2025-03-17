@@ -163,9 +163,9 @@ ssize_t Serial::write(const void* buf, std::size_t size)
 /**
  * @brief     Write one byte to the serial port
  */
-void Serial::writeByte(uint8_t byte)
+bool Serial::writeByte(uint8_t byte) noexcept
 {
-    write(handle_, &byte, 1);
+    return (::write(handle_, &byte, 1) == 1);
 }
 
 /**
@@ -206,7 +206,7 @@ void Serial::waitSend()
 /**
  * @brief     Clear the input and/or the output queue.
  */
-void Serial::clearBuffer(EnClearOper operation)
+void Serial::clearBuffer(EnClearOper operation) noexcept
 {
     switch (operation)
     {

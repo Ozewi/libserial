@@ -20,7 +20,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
-static constexpr char program_name[] = "nanoterm v2.1";
+static constexpr char program_name[] = "nanoterm v2.3";
 
 /**--------------------------------------------------------------------------------------------------
  * @brief       Constantes de configuración
@@ -36,22 +36,14 @@ void PortReader(Serial& port)
     char byte;
     while (true)
     {
-        switch (port.pendingRead())
+        if (port.pendingRead())
         {
-            case Serial::PENDING_ERROR:
-                std::cerr << "Error leyendo del puerto serie. Terminando." << std::endl;
-                exit(-1);
-                break;
-
-            case Serial::PENDING_EMPTY:
-                std::this_thread::sleep_for(std::chrono::milliseconds(1));
-                break;
-
-            default:
-                while (port.read(&byte, 1, Serial::NO_TIMEOUT))
-                    std::cout << byte;
-                fflush(stdout);
+            while (port.read(&byte, 1, Serial::NO_TIMEOUT))
+                std::cout << byte;
+            fflush(stdout);
         }
+        else
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 }
 

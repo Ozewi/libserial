@@ -177,13 +177,11 @@ public:
 
     /**
      * @brief   Write one byte to the serial port.
-     * @throws  invalid_argument if buf is nullptr.
-     * @throws  ios_base::failure if data can't be written.
      */
-    void                                                /** @return void */
+    bool                                                /** @return true: Character sent | false: Error */
     writeByte (
         uint8_t byte                                    /** @param byte  Byte a escribir */
-    );
+    ) noexcept;
 
     /**
      * @brief   Check if there's any data in the output queue.
@@ -212,7 +210,7 @@ public:
     void                                                /** @return void */
     clearBuffer (
         EnClearOper operation                           /** @param operation  Operation to perform. @see EnClearOper */
-    );
+    ) noexcept;
 
     /**
      * @brief   Set serial port line status.
