@@ -4,7 +4,7 @@
  * @author    José Luis Sánchez Arroyo
  * @section   License
  * Copyright (c) 2005-2025 José Luis Sánchez Arroyo
- * This software is distributed under the terms of the LGPL version 2.1 and comes WITHOUT ANY WARRANTY.
+ * This software is distributed under the terms of the BSD 3-Clause License and comes WITHOUT ANY WARRANTY.
  * Please read the file LICENSE for further details.
  */
 
@@ -18,46 +18,40 @@
 #include <thread>                                       // std::this_thread::sleep_for
 #include <stdexcept>                                    // exceptions
 
-constexpr char LIBRARY_VERSION[] = "2.3";               // Library version
+// Useful macros for throwing exceptions with source info
+#define CONTEXTUALIZE(txt) std::string(" (") + __FUNCTION__ + ") - " txt
 
-using namespace std::string_literals;
+#define THROW_SYSTEM_ERROR(txt) throw std::system_error(errno, std::generic_category(), CONTEXTUALIZE(txt))
+#define THROW_INVALID_ARGUMENT(txt) throw std::invalid_argument(CONTEXTUALIZE(txt))
 
-/**
- * @brief   Function to get the library version at runtime.
- */
 namespace libserial {
-const char* version()
-{
-    return LIBRARY_VERSION;
-}
-} // namespace
 
 /** ----------------------------------------------------
- * @brief   Class Serial: Serial port management.
+ * @brief     Class Serial: Serial port management.
  * ------ */
 
 /**
- * @brief   Constructor. Open and configure the serial port.
- * @desc    The serial port is open and the requested configuration is applied. Previous configuration is stored.
- * @throw   std::invalid_argument if any of the arguments provided is not valid
- * @throw   std::ios_base::failure on error while opening or configuring the serial port.
- * @see     libserial.h for a list of the enumerated types in the parameters.
+ * @brief     Constructor. Open and configure the serial port.
+ * @details   The serial port is open and the requested configuration is applied. Previous configuration is stored.
+ * @throw     std::invalid_argument if any of the arguments provided is not valid
+ * @throw     std::ios_base::failure on error while opening or configuring the serial port.
+ * @see       libserial.h for a list of the enumerated types in the parameters.
  */
-Serial::Serial(const std::string& devname, uint32_t baudrate, EnBlockingMode blockmode, EnFlowControl flowcontrol, EnCharLen charlen, EnParity parity, EnStopBits stopbits)
+Serial::Serial(const std::string& devname, uint32_t baudrate, BlockingMode blockmode, FlowControl flowcontrol, CharLen charlen, Parity parity, StopBits stopbits)
   : handle_(-1), prev_tio_()
 {
     auto baud_code = getBaudCode(baudrate);             // Get the baudrate code from the baudrate value, rounded down.
     if (baud_code == 0)
-        throw std::invalid_argument("Requested baudrate is too low"s);
+        THROW_INVALID_ARGUMENT("Requested baudrate is too low");
 
     handle_ = ::open(devname.c_str(), O_RDWR | O_NOCTTY | blockmode);
     if (handle_ < 0)                                    // Open error
-        throw std::ios_base::failure("Error in open: "s + std::string(strerror(errno)));
+        THROW_SYSTEM_ERROR("open()");
 
     if (tcgetattr(handle_, &prev_tio_) < 0)             // Store the previous termios configuration
     {
         ::close(handle_);
-        throw std::ios_base::failure("Error in tcgetattr: "s + strerror(errno));
+        THROW_SYSTEM_ERROR("tcgetattr()");
     }
 
     termios tio = {};
@@ -73,13 +67,13 @@ Serial::Serial(const std::string& devname, uint32_t baudrate, EnBlockingMode blo
     {
         tcsetattr(handle_, TCSANOW, &prev_tio_);
         ::close(handle_);
-        throw std::ios_base::failure("Error in tcflush / tcsetattr: "s + strerror(errno));
+        THROW_SYSTEM_ERROR("tcflush() or tcsetattr()");
     }
 }
 
 /**
- * @brief   Move constructor.
- * @desc    Moves data from the provided object to this.
+ * @brief     Move constructor.
+ * @details   Moves data from the provided object to this.
  */
 Serial::Serial(Serial&& other)
 {
@@ -107,7 +101,7 @@ Serial::~Serial()
 ssize_t Serial::read(void* buf, std::size_t size, uint32_t t_out)
 {
     if (buf == nullptr)
-        throw std::invalid_argument("read: null pointer"s);
+        THROW_INVALID_ARGUMENT("Null pointer received");
 
     ssize_t rt = 0;
     if (t_out == NO_TIMEOUT)
@@ -132,12 +126,12 @@ ssize_t Serial::read(void* buf, std::size_t size, uint32_t t_out)
             err = (remain > 0)? poll(&p_list, 1, remain) : 0; // If remain is 0 or less (aka time expired), then exit with err = 0 (timeout)
         } while (err < 0 && errno == EINTR);            // On EINTR reception, continue waiting
         if (err < 0)                                    // Read error
-            throw std::ios_base::failure("read: unexpected error polling the serial port - "s + strerror(errno));
+            THROW_SYSTEM_ERROR("poll()");
         if (err == 0)                                   // Timeout
             break;
         err = ::read(handle_, &ptr[rt], size - rt);
         if (err < 0)                                    // Read error
-            throw std::ios_base::failure("read: unexpected error reading the serial port - "s + strerror(errno));
+            THROW_SYSTEM_ERROR("read()");
         rt += err;
     }
     return rt;
@@ -149,13 +143,13 @@ ssize_t Serial::read(void* buf, std::size_t size, uint32_t t_out)
 ssize_t Serial::write(const void* buf, std::size_t size)
 {
     if (buf == nullptr)
-        throw std::invalid_argument("write: null pointer"s);
+        THROW_INVALID_ARGUMENT("Null pointer received");
     ssize_t bytes = ::write(handle_, buf, size);
     if (bytes < 0                                       // Write error
         && errno != EAGAIN                              // An error for a valid cause should't trigger an exception
         && errno != EWOULDBLOCK
         && errno != EINTR)
-        throw std::ios_base::failure("write: unexpected error writing - "s + strerror(errno));
+        THROW_SYSTEM_ERROR("write()");
 
     return bytes;
 }
@@ -175,12 +169,12 @@ int Serial::pendingWrite()
 {
     int pending, lsr;
     if (ioctl(handle_, TIOCSERGETLSR, &lsr) < 0)        // Read the line status register
-        throw std::ios_base::failure("ioctl: Error getting serial port status: "s + strerror(errno));
+        THROW_SYSTEM_ERROR("ioctl(TIOCSERGETLSR)");
     if (lsr & TIOCSER_TEMT)                             // FIFO and shift registers are empty
         return 0;
     if (ioctl(handle_, TIOCOUTQ, &pending) < 0)
-        throw std::ios_base::failure("ioctl: Error getting serial output queue status: "s + strerror(errno));
-    return pending? pending : 1;                        // The UART is not empty, so let's return 1 even if the output queue is.
+        THROW_SYSTEM_ERROR("ioctl(TIOCOUTQ)");
+    return pending? pending : 1;                        // The output FIFO is empty but the UART is not, so let's return 1 anyway.
 }
 
 /**
@@ -190,7 +184,7 @@ int Serial::pendingRead()
 {
     int pending;
     if (ioctl(handle_, TIOCINQ, &pending) < 0)
-        throw std::ios_base::failure("ioctl: Error getting serial input queue status: "s + strerror(errno));
+        THROW_SYSTEM_ERROR("ioctl(TIOCINQ)");
     return pending;
 }
 
@@ -206,7 +200,7 @@ void Serial::waitSend()
 /**
  * @brief     Clear the input and/or the output queue.
  */
-void Serial::clearBuffer(EnClearOper operation) noexcept
+void Serial::clearBuffer(ClearOper operation) noexcept
 {
     switch (operation)
     {
@@ -217,7 +211,7 @@ void Serial::clearBuffer(EnClearOper operation) noexcept
         tcflush(handle_, TCOFLUSH);
         break;
       case FLUSH_BUF_OUT:                               // Flush the output buffer
-        tcdrain(handle_);                               // This function returns when the kernel finishes flushing out the data to the UARTE
+        tcdrain(handle_);                               // This function returns when the kernel finishes flushing out the data to the UART
         break;
     }
 }
@@ -229,7 +223,7 @@ void Serial::setLine(SerialLine line, bool mode)
 {
     unsigned flags;
     if (ioctl(handle_, TIOCMGET, &flags) < 0)
-        throw std::ios_base::failure("ioctl: Error getting serial line status: "s + strerror(errno));
+        THROW_SYSTEM_ERROR("ioctl(TIOCMGET)");
 
     if (mode)
         flags |= line;
@@ -237,7 +231,7 @@ void Serial::setLine(SerialLine line, bool mode)
         flags &= ~line;
 
     if (ioctl(handle_, TIOCMSET, &flags) < 0)
-        throw std::ios_base::failure("ioctl: Error setting serial line status: "s + strerror(errno));
+        THROW_SYSTEM_ERROR("ioctl(TIOCMSET)");
 }
 
 /**
@@ -247,7 +241,7 @@ bool Serial::getLine(SerialLine line)
 {
     unsigned flags;
     if (ioctl(handle_, TIOCMGET, &flags) < 0)
-        throw std::ios_base::failure("ioctl: Error getting serial line status: "s + strerror(errno));
+        THROW_SYSTEM_ERROR("ioctl(TIOCMGET)");
 
     return bool(flags & line);
 }
@@ -255,19 +249,19 @@ bool Serial::getLine(SerialLine line)
 /**
  * @brief     Set reading mode (blocking or non-blocking)
  */
-void Serial::setBlocking (EnBlockingMode mode)
+void Serial::setBlocking (BlockingMode mode)
 {
     int flags = fcntl(handle_, F_GETFL, 0);
     if (flags == -1)
-        throw std::ios_base::failure("fcntl: Error getting device control flags from the serial port: "s + strerror(errno));
+        THROW_SYSTEM_ERROR("fcntl(F_GETFL)");
 
     if (mode)
-        flags |= O_NDELAY;
+        flags |= O_NONBLOCK;
     else
-        flags &= ~O_NDELAY;
+        flags &= ~O_NONBLOCK;
 
     if (fcntl(handle_, F_SETFL, flags) < 0)
-        throw std::ios_base::failure("fcntl: Error setting device control flags to the serial port: "s + strerror(errno));
+        THROW_SYSTEM_ERROR("fcntl(F_SETFL)");
 }
 
 /** ----------------------------------------------------
@@ -324,3 +318,5 @@ tcflag_t Serial::getBaudCode(uint32_t baudrate)
             return iter.flag;
     return 0;                                           // fallback
 }
+
+} // namespace libserial
